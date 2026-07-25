@@ -64,7 +64,7 @@ export function ServicePageContent({
         <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
           <HeroMotion>
             <p className="font-display text-4xl text-white sm:text-5xl md:text-6xl">
-              AlHadiInstitude
+              Al-Hadi Institute
             </p>
             <h1 className="mt-4 max-w-3xl text-3xl font-semibold text-white sm:text-4xl">
               {service.title}

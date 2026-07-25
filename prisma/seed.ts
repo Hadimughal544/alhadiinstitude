@@ -13,7 +13,22 @@ const pool = new Pool({
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const CURRENCIES = ["PKR", "USD", "GBP", "CAD", "AUD", "NZD", "BDT", "SAR", "ZAR"] as const;
+const CURRENCIES = [
+  "PKR",
+  "USD",
+  "GBP",
+  "CAD",
+  "AUD",
+  "NZD",
+  "BDT",
+  "SAR",
+  "ZAR",
+  "AED",
+  "KWD",
+  "QAR",
+  "OMR",
+  "BHD",
+] as const;
 
 /** Approximate multipliers from a GBP base amount */
 const FX: Record<(typeof CURRENCIES)[number], number> = {
@@ -26,6 +41,11 @@ const FX: Record<(typeof CURRENCIES)[number], number> = {
   BDT: 155,
   SAR: 4.76,
   ZAR: 23.5,
+  AED: 4.7,
+  KWD: 0.39,
+  QAR: 4.65,
+  OMR: 0.49,
+  BHD: 0.48,
 };
 
 function pricesFromGbp(gbp: number) {
@@ -36,20 +56,25 @@ function pricesFromGbp(gbp: number) {
 }
 
 const countries = [
-  { code: "PK", name: "Pakistan", currencyCode: "PKR", currencySymbol: "Rs", flagEmoji: "🇵🇰", sortOrder: 1 },
-  { code: "US", name: "United States", currencyCode: "USD", currencySymbol: "$", flagEmoji: "🇺🇸", sortOrder: 2 },
-  { code: "GB", name: "United Kingdom", currencyCode: "GBP", currencySymbol: "£", flagEmoji: "🇬🇧", sortOrder: 3 },
-  { code: "CA", name: "Canada", currencyCode: "CAD", currencySymbol: "C$", flagEmoji: "🇨🇦", sortOrder: 4 },
-  { code: "AU", name: "Australia", currencyCode: "AUD", currencySymbol: "A$", flagEmoji: "🇦🇺", sortOrder: 5 },
-  { code: "NZ", name: "New Zealand", currencyCode: "NZD", currencySymbol: "NZ$", flagEmoji: "🇳🇿", sortOrder: 6 },
-  { code: "BD", name: "Bangladesh", currencyCode: "BDT", currencySymbol: "৳", flagEmoji: "🇧🇩", sortOrder: 7 },
-  { code: "SA", name: "Saudi Arabia", currencyCode: "SAR", currencySymbol: "﷼", flagEmoji: "🇸🇦", sortOrder: 8 },
-  { code: "ZA", name: "South Africa", currencyCode: "ZAR", currencySymbol: "R", flagEmoji: "🇿🇦", sortOrder: 9 },
-  { code: "ROW", name: "Rest Of The World", currencyCode: "USD", currencySymbol: "$", flagEmoji: "🌍", sortOrder: 10 },
+  { code: "SA", name: "Saudi Arabia", currencyCode: "SAR", currencySymbol: "﷼", flagEmoji: "🇸🇦", sortOrder: 1 },
+  { code: "AE", name: "United Arab Emirates", currencyCode: "AED", currencySymbol: "د.إ", flagEmoji: "🇦🇪", sortOrder: 2 },
+  { code: "KW", name: "Kuwait", currencyCode: "KWD", currencySymbol: "د.ك", flagEmoji: "🇰🇼", sortOrder: 3 },
+  { code: "QA", name: "Qatar", currencyCode: "QAR", currencySymbol: "ر.ق", flagEmoji: "🇶🇦", sortOrder: 4 },
+  { code: "OM", name: "Oman", currencyCode: "OMR", currencySymbol: "ر.ع.", flagEmoji: "🇴🇲", sortOrder: 5 },
+  { code: "BH", name: "Bahrain", currencyCode: "BHD", currencySymbol: "د.ب", flagEmoji: "🇧🇭", sortOrder: 6 },
+  { code: "GB", name: "United Kingdom", currencyCode: "GBP", currencySymbol: "£", flagEmoji: "🇬🇧", sortOrder: 7 },
+  { code: "US", name: "United States", currencyCode: "USD", currencySymbol: "$", flagEmoji: "🇺🇸", sortOrder: 8 },
+  { code: "CA", name: "Canada", currencyCode: "CAD", currencySymbol: "C$", flagEmoji: "🇨🇦", sortOrder: 9 },
+  { code: "AU", name: "Australia", currencyCode: "AUD", currencySymbol: "A$", flagEmoji: "🇦🇺", sortOrder: 10 },
+  { code: "NZ", name: "New Zealand", currencyCode: "NZD", currencySymbol: "NZ$", flagEmoji: "🇳🇿", sortOrder: 11 },
+  { code: "PK", name: "Pakistan", currencyCode: "PKR", currencySymbol: "Rs", flagEmoji: "🇵🇰", sortOrder: 12 },
+  { code: "BD", name: "Bangladesh", currencyCode: "BDT", currencySymbol: "৳", flagEmoji: "🇧🇩", sortOrder: 13 },
+  { code: "ZA", name: "South Africa", currencyCode: "ZAR", currencySymbol: "R", flagEmoji: "🇿🇦", sortOrder: 14 },
+  { code: "ROW", name: "Rest Of The World", currencyCode: "USD", currencySymbol: "$", flagEmoji: "🌍", sortOrder: 15 },
 ];
 
 async function main() {
-  console.log("Seeding AlHadiInstitude...");
+  console.log("Seeding Al-Hadi Institute...");
 
   for (const c of countries) {
     await prisma.country.upsert({
@@ -295,7 +320,7 @@ async function main() {
   ]);
 
   const settings: Record<string, string> = {
-    brandName: "AlHadiInstitude",
+    brandName: "Al-Hadi Institute",
     tagline: "Faith, learning, and technology — guided with excellence",
     whatsapp: process.env.WHATSAPP_NUMBER || "447774874052",
     contactEmail: process.env.CONTACT_EMAIL || "info@alhadiinstitute.com",

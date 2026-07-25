@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
 import { updatePlanAction } from "@/actions";
 import { Button } from "@/components/ui/button";
+import { PLAN_CURRENCIES } from "@/lib/currencies";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-const CURRENCIES = ["PKR", "USD", "GBP", "CAD", "AUD", "NZD", "BDT", "SAR", "ZAR"];
 
 export default async function EditPlanPage({
   params,
@@ -67,7 +66,7 @@ export default async function EditPlanPage({
         <div>
           <h2 className="mb-3 font-semibold">Prices by currency</h2>
           <div className="grid gap-3 sm:grid-cols-3">
-            {CURRENCIES.map((code) => (
+            {PLAN_CURRENCIES.map((code) => (
               <label key={code} className="block text-sm">
                 <span className="mb-1 block font-medium">{code}</span>
                 <input

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ChangeCountryButton } from "@/components/change-country-button";
 import type { RegionContext } from "@/lib/region";
@@ -13,26 +14,22 @@ const links = [
 ];
 
 export function SiteHeader({
-  brandName,
   region,
 }: {
-  brandName: string;
   region: RegionContext | null;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-foreground/10 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link href="/home" className="font-display text-xl tracking-tight text-teal dark:text-gold sm:text-2xl">
-          {brandName}
-        </Link>
-        <nav className="hidden items-center gap-5 text-sm font-medium text-muted md:flex">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <BrandLogo href="/home" size="sm" />
+        <nav className="hidden items-center gap-5 text-sm font-medium text-muted lg:flex">
           {links.map((l) => (
             <Link key={l.href} href={l.href} className="transition hover:text-foreground">
               {l.label}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {region && (
             <ChangeCountryButton
               label={`${region.countryName} · ${region.currencyCode}`}
@@ -42,7 +39,7 @@ export function SiteHeader({
           <ThemeToggle />
         </div>
       </div>
-      <nav className="flex gap-3 overflow-x-auto border-t border-foreground/5 px-4 py-2 text-xs font-medium text-muted md:hidden">
+      <nav className="flex gap-2 overflow-x-auto border-t border-border px-4 py-2 text-xs font-medium text-muted lg:hidden">
         {links.map((l) => (
           <Link key={l.href} href={l.href} className="whitespace-nowrap rounded-full bg-foreground/5 px-3 py-1.5">
             {l.label}

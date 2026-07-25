@@ -10,8 +10,9 @@ import {
   COOKIE_MAX_AGE,
 } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
-import { auth, signIn, signOut } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import type { InquiryStatus, InquiryType } from "@/generated/prisma/client";
+import { GBP_FX, PLAN_CURRENCIES } from "@/lib/currencies";
 
 export async function selectCountryAction(countryCode: string) {
   const country = await prisma.country.findFirst({
@@ -94,26 +95,6 @@ export async function submitInquiryAction(formData: FormData) {
   return { ok: true as const };
 }
 
-export async function loginAction(formData: FormData) {
-  const email = String(formData.get("email") || "");
-  const password = String(formData.get("password") || "");
-  try {
-    await signIn("credentials", {
-      email,
-      password,
-      redirectTo: "/admin",
-    });
-  } catch (e) {
-    const err = e as { digest?: string; message?: string };
-    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw e;
-    return { ok: false as const, error: "Invalid email or password." };
-  }
-}
-
-export async function logoutAction() {
-  await signOut({ redirectTo: "/login" });
-}
-
 async function requireAdmin() {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") {
@@ -187,7 +168,7 @@ export async function updatePlanAction(formData: FormData) {
     },
   });
 
-  const currencies = ["PKR", "USD", "GBP", "CAD", "AUD", "NZD", "BDT", "SAR", "ZAR"];
+  const currencies = [...PLAN_CURRENCIES];
   for (const code of currencies) {
     const raw = formData.get(`price_${code}`);
     if (raw === null || raw === "") continue;
@@ -324,17 +305,7 @@ export async function createPlanAction(formData: FormData) {
     },
   });
 
-  const FX: Record<string, number> = {
-    GBP: 1,
-    USD: 1.27,
-    CAD: 1.72,
-    AUD: 1.92,
-    NZD: 2.08,
-    PKR: 355,
-    BDT: 155,
-    SAR: 4.76,
-    ZAR: 23.5,
-  };
+  const FX = GBP_FX;
 
   if (gbp > 0) {
     for (const [currencyCode, mult] of Object.entries(FX)) {

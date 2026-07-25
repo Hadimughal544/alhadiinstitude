@@ -13,12 +13,14 @@ const COURSES_BY_SERVICE: Record<string, string[]> = {
 
 export function InquiryForm({
   serviceSlug,
+  services,
   planId,
   countryCode,
   whatsapp,
   defaultType = "DEMO",
 }: {
-  serviceSlug: string;
+  serviceSlug?: string;
+  services?: Array<{ slug: string; title: string }>;
   planId?: string;
   countryCode?: string;
   whatsapp?: string;
@@ -26,7 +28,11 @@ export function InquiryForm({
 }) {
   const [pending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
-  const courses = COURSES_BY_SERVICE[serviceSlug] ?? COURSES_BY_SERVICE.quran;
+  const [selectedService, setSelectedService] = useState(
+    serviceSlug || services?.[0]?.slug || "quran"
+  );
+  const courses = COURSES_BY_SERVICE[selectedService] ?? [];
+  const showServiceSelector = !serviceSlug && services && services.length > 0;
 
   function onSubmit(formData: FormData) {
     startTransition(async () => {
@@ -61,7 +67,9 @@ export function InquiryForm({
 
   return (
     <form action={onSubmit} className="space-y-4 rounded-3xl border border-foreground/10 bg-card p-6 sm:p-8">
-      <input type="hidden" name="serviceSlug" value={serviceSlug} />
+      {!showServiceSelector && (
+        <input type="hidden" name="serviceSlug" value={selectedService} />
+      )}
       <input type="hidden" name="planId" value={planId || ""} />
       <input type="hidden" name="countryCode" value={countryCode || ""} />
 
@@ -94,12 +102,31 @@ export function InquiryForm({
         />
       </label>
 
+      {showServiceSelector && (
+        <label className="block text-sm">
+          <span className="mb-1.5 block font-medium">Select Service</span>
+          <select
+            name="serviceSlug"
+            value={selectedService}
+            onChange={(event) => setSelectedService(event.target.value)}
+            className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3 outline-none focus:ring-2 focus:ring-gold/50"
+          >
+            {services.map((service) => (
+              <option key={service.slug} value={service.slug}>
+                {service.title}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium">Select Course / Subject</span>
           <select
             name="course"
             className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3 outline-none focus:ring-2 focus:ring-gold/50"
+            key={selectedService}
             defaultValue=""
           >
             <option value="">Choose...</option>

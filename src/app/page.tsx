@@ -25,7 +25,6 @@ export default async function CountryGatePage() {
       </div>
       <CountrySelector
         countries={countries}
-        brandName={settings.brandName || "AlHadiInstitude"}
         backgroundUrl={
           settings.countryBackground ||
           "https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&w=2000&q=80"

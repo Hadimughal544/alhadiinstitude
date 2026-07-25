@@ -18,6 +18,13 @@ import {
 
 const COLORS = ["#0d4f4f", "#c4a35a", "#166666", "#5c6f72", "#d4b76e", "#1a7a7a"];
 
+const tooltipStyle = {
+  backgroundColor: "var(--card)",
+  border: "1px solid var(--border)",
+  borderRadius: "12px",
+  color: "var(--foreground)",
+};
+
 export function DashboardCharts({
   byService,
   byStatus,
@@ -29,11 +36,11 @@ export function DashboardCharts({
 }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <div className="rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           Inquiries — last 14 days
         </h2>
-        <div className="mt-4 h-64">
+        <div className="mt-4 h-56 sm:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trend}>
               <defs>
@@ -43,9 +50,9 @@ export function DashboardCharts({
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.08} />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--muted)" }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--muted)" }} />
+              <Tooltip contentStyle={tooltipStyle} />
               <Area
                 type="monotone"
                 dataKey="count"
@@ -59,11 +66,11 @@ export function DashboardCharts({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           By service
         </h2>
-        <div className="mt-4 h-64">
+        <div className="mt-4 h-56 sm:h-64">
           {byService.length === 0 ? (
             <p className="flex h-full items-center justify-center text-sm text-muted">
               No inquiry data yet
@@ -72,9 +79,9 @@ export function DashboardCharts({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={byService}>
                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.08} />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted)" }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--muted)" }} />
+                <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="value" radius={[8, 8, 0, 0]} name="Inquiries">
                   {byService.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -86,12 +93,12 @@ export function DashboardCharts({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm lg:col-span-2">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5 lg:col-span-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           By status
         </h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div className="h-64">
+          <div className="h-56 sm:h-64">
             {byStatus.every((s) => s.value === 0) ? (
               <p className="flex h-full items-center justify-center text-sm text-muted">
                 No inquiry data yet
@@ -113,7 +120,7 @@ export function DashboardCharts({
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip contentStyle={tooltipStyle} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -123,7 +130,7 @@ export function DashboardCharts({
             {byStatus.map((s, i) => (
               <li
                 key={s.name}
-                className="flex items-center justify-between rounded-xl border border-foreground/10 px-4 py-3"
+                className="flex items-center justify-between rounded-xl border border-border px-4 py-3"
               >
                 <span className="flex items-center gap-2 text-sm font-medium">
                   <span

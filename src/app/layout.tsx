@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Source_Sans_3 } from "next/font/google";
+import { Montserrat, Source_Sans_3 } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const display = Cormorant_Garamond({
+const display = Montserrat({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["600", "700", "800", "900"],
 });
 
 const body = Source_Sans_3({
@@ -17,8 +17,8 @@ const body = Source_Sans_3({
 
 export const metadata: Metadata = {
   title: {
-    default: "AlHadiInstitude",
-    template: "%s | AlHadiInstitude",
+    default: "Al-Hadi Institute",
+    template: "%s | Al-Hadi Institute",
   },
   description:
     "Holy Quran tutors, online tuition, and IT services — education and technology guided with excellence.",

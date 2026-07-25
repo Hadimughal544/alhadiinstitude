@@ -1,21 +1,20 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { ChangeCountryButton } from "@/components/change-country-button";
 
 export function SiteFooter({
-  brandName,
   email,
   whatsapp,
 }: {
-  brandName: string;
   email?: string;
   whatsapp?: string;
 }) {
   return (
-    <footer className="mt-auto border-t border-foreground/10 bg-teal text-cream dark:bg-[#061012]">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
+    <footer className="mt-auto border-t border-border bg-teal text-cream dark:bg-[#061012]">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 sm:py-12 md:grid-cols-3">
         <div>
-          <p className="font-display text-2xl">{brandName}</p>
-          <p className="mt-3 max-w-sm text-sm text-cream/75">
+          <BrandLogo href="/home" size="md" variant="onDark" />
+          <p className="mt-4 max-w-sm text-sm text-cream/75">
             Faith-guided education and modern IT — Holy Quran tutors, online tuition, and technology services worldwide.
           </p>
         </div>
@@ -50,7 +49,7 @@ export function SiteFooter({
         </div>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs text-cream/60">
-        © {new Date().getFullYear()} {brandName}. All rights reserved.
+        © {new Date().getFullYear()} Al-Hadi Institute. All rights reserved.
       </div>
     </footer>
   );

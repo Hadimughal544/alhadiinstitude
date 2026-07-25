@@ -1,13 +1,35 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { loginAction } from "@/actions";
+import { FormEvent, useState, useTransition } from "react";
+import { signIn } from "next-auth/react";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    startTransition(async () => {
+      setError(null);
+      const result = await signIn("credentials", {
+        email: String(formData.get("email") || ""),
+        password: String(formData.get("password") || ""),
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid email or password.");
+        return;
+      }
+
+      window.location.assign("/admin");
+    });
+  }
 
   return (
     <div className="mesh-bg flex min-h-screen items-center justify-center px-4">
@@ -16,16 +38,10 @@ export default function LoginPage() {
       </div>
       <form
         className="w-full max-w-md rounded-3xl border border-foreground/10 bg-card p-8 shadow-xl"
-        action={(fd) => {
-          startTransition(async () => {
-            setError(null);
-            const res = await loginAction(fd);
-            if (res && !res.ok) setError(res.error);
-          });
-        }}
+        onSubmit={handleSubmit}
       >
-        <p className="font-display text-3xl text-teal dark:text-gold">AlHadiInstitude</p>
-        <h1 className="mt-2 text-xl font-semibold">Admin Login</h1>
+        <BrandLogo href="/" size="md" />
+        <h1 className="mt-4 text-xl font-semibold">Admin Login</h1>
         <label className="mt-6 block text-sm">
           <span className="mb-1.5 block font-medium">Email</span>
           <input

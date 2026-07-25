@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* next-themes toggles a `.dark` class; without this the `dark:` variant would
+   follow the OS `prefers-color-scheme` instead of the in-app theme toggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f7f4ef;
   --foreground: #0f2a2e;
@@ -10,8 +14,9 @@
   --gold: #c4a35a;
   --gold-soft: #d4b76e;
   --muted: #5c6f72;
-  --card: rgba(255, 255, 255, 0.72);
-  --panel: rgba(247, 244, 239, 0.82);
+  --card: #ffffff;
+  --panel: rgba(247, 244, 239, 0.88);
+  --border: rgba(15, 42, 46, 0.12);
 }
 
 .dark {
@@ -24,8 +29,9 @@
   --gold: #d4b76e;
   --gold-soft: #e0c788;
   --muted: #9bb0b3;
-  --card: rgba(12, 28, 30, 0.78);
-  --panel: rgba(10, 24, 26, 0.86);
+  --card: #0f1c1e;
+  --panel: rgba(10, 24, 26, 0.9);
+  --border: rgba(238, 243, 243, 0.12);
 }
 
 @theme inline {
@@ -40,6 +46,7 @@
   --color-muted: var(--muted);
   --color-card: var(--card);
   --color-panel: var(--panel);
+  --color-border: var(--border);
   --font-sans: var(--font-body);
   --font-display: var(--font-display);
 }
@@ -59,7 +66,7 @@ body {
 }
 
 .font-display {
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-display), "Montserrat", system-ui, sans-serif;
 }
 
 .glass-panel {
@@ -74,4 +81,13 @@ body {
     radial-gradient(ellipse 80% 50% at 20% 20%, color-mix(in oklab, var(--gold) 18%, transparent), transparent),
     radial-gradient(ellipse 60% 40% at 80% 10%, color-mix(in oklab, var(--teal) 22%, transparent), transparent),
     linear-gradient(180deg, color-mix(in oklab, var(--background) 88%, #000) 0%, var(--background) 100%);
+}
+
+.gateway-grain {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 28%),
+    radial-gradient(circle at 80% 30%, rgba(196, 163, 90, 0.08), transparent 32%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  opacity: 0.35;
+  mix-blend-mode: soft-light;
 }

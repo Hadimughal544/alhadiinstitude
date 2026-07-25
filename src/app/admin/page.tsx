@@ -93,7 +93,7 @@ export default async function AdminDashboard() {
         <div>
           <h1 className="font-display text-3xl sm:text-4xl">Dashboard</h1>
           <p className="mt-1 text-muted">
-            Analytics and quick actions for AlHadiInstitude.
+            Analytics and quick actions for Al-Hadi Institute.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

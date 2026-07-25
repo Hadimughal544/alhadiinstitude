@@ -15,7 +15,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState } from "react";
-import { logoutAction } from "@/actions";
+import { signOut } from "next-auth/react";
+import { BrandLogo } from "@/components/brand-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +34,7 @@ export function AdminSidebar() {
   const [open, setOpen] = useState(false);
 
   const NavLinks = (
-    <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
+    <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
       {nav.map((item) => {
         const active =
           item.href === "/admin"
@@ -62,12 +63,12 @@ export function AdminSidebar() {
 
   return (
     <>
-      <div className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-foreground/10 bg-card/90 px-4 py-3 backdrop-blur lg:hidden">
+      <div className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-foreground/10 bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
         <button
           type="button"
           aria-label="Open menu"
           onClick={() => setOpen(true)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-foreground/10"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-foreground/10 bg-card"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -79,25 +80,22 @@ export function AdminSidebar() {
         <button
           type="button"
           aria-label="Close menu"
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/45 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-foreground/10 bg-[#0b2a2e] text-cream transition-transform dark:bg-[#071416] lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-foreground/10 bg-card text-foreground shadow-xl transition-transform duration-300 lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-white/10 px-5 py-5">
-          <div>
-            <p className="font-display text-xl text-gold">AlHadiInstitude</p>
-            <p className="text-xs text-cream/60">Admin console</p>
-          </div>
+        <div className="flex items-center justify-between gap-2 border-b border-foreground/10 px-4 py-4">
+          <BrandLogo href="/admin" size="sm" />
           <button
             type="button"
-            className="rounded-lg p-1 lg:hidden"
+            className="rounded-lg p-1 text-muted hover:text-foreground lg:hidden"
             onClick={() => setOpen(false)}
             aria-label="Close"
           >
@@ -107,26 +105,28 @@ export function AdminSidebar() {
 
         {NavLinks}
 
-        <div className="mt-auto space-y-2 border-t border-white/10 p-4">
+        <div className="mt-auto space-y-2 border-t border-foreground/10 p-4">
           <Link
             href="/home"
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-cream/75 transition hover:bg-white/5 hover:text-cream"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted transition hover:bg-foreground/5 hover:text-foreground"
           >
             <ExternalLink className="h-4 w-4" />
             View site
           </Link>
           <div className="flex items-center justify-between gap-2 px-1">
-            <form action={logoutAction} className="flex-1">
-              <button
-                type="submit"
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-cream/75 transition hover:bg-white/5 hover:text-cream"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
-            </form>
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut({ redirect: false });
+                window.location.assign("/login");
+              }}
+              className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted transition hover:bg-foreground/5 hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
             <div className="hidden lg:block">
-              <ThemeToggle className="border-white/20 text-cream" />
+              <ThemeToggle />
             </div>
           </div>
         </div>

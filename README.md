@@ -23,8 +23,11 @@ Set:
 
 - `DATABASE_URL` — Neon pooled connection string
 - `AUTH_SECRET` — random secret (`openssl rand -base64 32`)
-- `AUTH_URL` — `http://localhost:3000`
 - `ADMIN_EMAIL` / `ADMIN_PASSWORD` — seed admin login
+
+Auth.js infers the current origin. In production, do not configure
+`AUTH_URL` or `NEXTAUTH_URL` as `http://localhost:3000`. Remove those
+variables or set both to your deployed HTTPS origin.
 
 3. Install and prepare the database:
 

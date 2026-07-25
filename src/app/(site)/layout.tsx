@@ -8,14 +8,13 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const [region, settings] = await Promise.all([getRegionContext(), getSettingsMap()]);
 
   return (
-    <>
-      <SiteHeader brandName={settings.brandName || "AlHadiInstitude"} region={region} />
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      <SiteHeader region={region} />
       <main className="flex-1">{children}</main>
       <SiteFooter
-        brandName={settings.brandName || "AlHadiInstitude"}
         email={settings.contactEmail}
         whatsapp={settings.whatsapp}
       />
-    </>
+    </div>
   );
 }

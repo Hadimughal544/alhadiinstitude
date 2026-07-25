@@ -12,5 +12,7 @@ export function isExemptFromCountryGate(pathname: string) {
   if (pathname.startsWith("/admin")) return true;
   if (pathname.startsWith("/api")) return true;
   if (pathname.startsWith("/_next")) return true;
+  // Static assets served from /public (images, fonts, icons, etc.)
+  if (/\.[a-zA-Z0-9]+$/.test(pathname)) return true;
   return false;
 }
