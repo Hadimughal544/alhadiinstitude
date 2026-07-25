@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f4ef;
+  --foreground: #0f2a2e;
+  --cream: #f7f4ef;
+  --ink: #0f2a2e;
+  --teal: #0d4f4f;
+  --teal-light: #166666;
+  --gold: #c4a35a;
+  --gold-soft: #d4b76e;
+  --muted: #5c6f72;
+  --card: rgba(255, 255, 255, 0.72);
+  --panel: rgba(247, 244, 239, 0.82);
+}
+
+.dark {
+  --background: #071416;
+  --foreground: #eef3f3;
+  --cream: #eef3f3;
+  --ink: #eef3f3;
+  --teal: #1a7a7a;
+  --teal-light: #249090;
+  --gold: #d4b76e;
+  --gold-soft: #e0c788;
+  --muted: #9bb0b3;
+  --card: rgba(12, 28, 30, 0.78);
+  --panel: rgba(10, 24, 26, 0.86);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-teal: var(--teal);
+  --color-teal-light: var(--teal-light);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-panel: var(--panel);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--gold) 45%, transparent);
+}
+
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+.glass-panel {
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+}
+
+.mesh-bg {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 20%, color-mix(in oklab, var(--gold) 18%, transparent), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 10%, color-mix(in oklab, var(--teal) 22%, transparent), transparent),
+    linear-gradient(180deg, color-mix(in oklab, var(--background) 88%, #000) 0%, var(--background) 100%);
+}
