@@ -9,6 +9,7 @@ import {
   CreditCard,
   Globe2,
   Settings,
+  Newspaper,
   ExternalLink,
   Menu,
   X,
@@ -23,6 +24,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
+  { href: "/admin/blogs", label: "Blogs", icon: Newspaper },
   { href: "/admin/services", label: "Services", icon: Layers },
   { href: "/admin/plans", label: "Plans", icon: CreditCard },
   { href: "/admin/countries", label: "Countries", icon: Globe2 },

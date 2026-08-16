@@ -3,8 +3,24 @@ import { FadeIn } from "@/components/motion";
 import { getRegionContext, getSettingsMap } from "@/lib/region";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Book a Demo or Enrol",
+  description:
+    "Book a free demo or enrol with Al-Hadi Institute for Quran tutoring, online tuition, or IT services.",
+  keywords: [
+    "book Quran tutor",
+    "online tuition demo",
+    "enrol Al-Hadi Institute",
+    "IT project inquiry",
+  ],
+  alternates: {
+    canonical: `${(process.env.NEXT_PUBLIC_SITE_URL || "https://alhadiinstitute.com").replace(/\/$/, "")}/book`,
+  },
+};
 
 export default async function BookPage({
   searchParams,
@@ -28,7 +44,7 @@ export default async function BookPage({
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
       <FadeIn>
-        <h1 className="font-display text-4xl">Start Your Journey</h1>
+        <h1 className="font-display text-[clamp(2.25rem,5vw,3.25rem)] font-extrabold tracking-tight">Start Your Journey</h1>
         <p className="mt-2 text-muted">
           Fill out the form below. We will respond via email or WhatsApp.
         </p>

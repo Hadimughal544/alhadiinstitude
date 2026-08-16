@@ -1,5 +1,6 @@
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { WhatsAppFloat } from "@/components/whatsapp-float";
 import { getRegionContext, getSettingsMap } from "@/lib/region";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         email={settings.contactEmail}
         whatsapp={settings.whatsapp}
       />
+      <WhatsAppFloat number={settings.whatsapp} />
     </div>
   );
 }

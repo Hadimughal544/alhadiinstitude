@@ -63,10 +63,10 @@ export function ServicePageContent({
         <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-teal/70 to-ink/50" />
         <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
           <HeroMotion>
-            <p className="font-display text-4xl text-white sm:text-5xl md:text-6xl">
+            <p className="font-display text-4xl font-extrabold tracking-tight text-white drop-shadow-lg sm:text-5xl md:text-6xl">
               Al-Hadi Institute
             </p>
-            <h1 className="mt-4 max-w-3xl text-3xl font-semibold text-white sm:text-4xl">
+            <h1 className="mt-4 max-w-3xl font-display text-[clamp(1.85rem,4.5vw,3rem)] font-extrabold tracking-tight text-white">
               {service.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base text-white/85 sm:text-lg">
@@ -90,13 +90,13 @@ export function ServicePageContent({
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <FadeIn>
-          <h2 className="font-display text-3xl">What we offer</h2>
+          <h2 className="font-display text-[clamp(1.75rem,3vw,2.25rem)] font-extrabold tracking-tight">What we offer</h2>
           <p className="mt-2 max-w-2xl text-muted">{service.description}</p>
         </FadeIn>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f, i) => (
             <FadeIn key={f.title} delay={i * 0.05}>
-              <div className="h-full rounded-3xl border border-foreground/10 bg-card p-6">
+              <div className="h-full rounded-3xl border border-foreground/10 bg-card p-6 dark:border-gold/15 dark:shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
                 <h3 className="text-lg font-semibold text-teal dark:text-gold">{f.title}</h3>
                 <p className="mt-2 text-sm text-muted">{f.description}</p>
               </div>
@@ -108,7 +108,7 @@ export function ServicePageContent({
       <section id="pricing" className="mesh-bg border-y border-foreground/10 py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <FadeIn>
-            <h2 className="font-display text-3xl">Simple Pricing Plans</h2>
+            <h2 className="font-display text-[clamp(1.75rem,3vw,2.25rem)] font-extrabold tracking-tight">Simple Pricing Plans</h2>
             <p className="mt-2 text-muted">
               Prices shown in {region.currencyCode} ({region.countryName}).
             </p>
@@ -122,7 +122,7 @@ export function ServicePageContent({
       {service.slug === "it" && (
         <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <FadeIn>
-            <h2 className="font-display text-3xl">Learn or hire us</h2>
+            <h2 className="font-display text-[clamp(1.75rem,3vw,2.25rem)] font-extrabold tracking-tight">Learn or hire us</h2>
             <p className="mt-2 max-w-2xl text-muted">
               Upskill with structured courses, or engage our team to design and ship web apps, mobile products, branding, marketing, and AI automations.
             </p>
@@ -142,7 +142,7 @@ export function ServicePageContent({
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <FadeIn>
-          <h2 className="font-display text-3xl">FAQs</h2>
+          <h2 className="font-display text-[clamp(1.75rem,3vw,2.25rem)] font-extrabold tracking-tight">FAQs</h2>
         </FadeIn>
         <div className="mt-8 space-y-4">
           {faqs.map((faq) => (

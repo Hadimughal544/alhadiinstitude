@@ -160,3 +160,26 @@ model SiteSetting {
   value     String   @db.Text
   updatedAt DateTime @updatedAt
 }
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model BlogPost {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  excerpt         String?    @db.Text
+  content         String     @db.Text
+  coverImage      String?
+  attachmentUrl   String?
+  attachmentName  String?
+  attachmentType  String?
+  status          PostStatus @default(DRAFT)
+  publishedAt     DateTime?
+  metaTitle       String?
+  metaDescription String?    @db.Text
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}

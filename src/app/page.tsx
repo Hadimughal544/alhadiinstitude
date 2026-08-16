@@ -1,11 +1,32 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { CountrySelector } from "@/components/country-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { WhatsAppFloat } from "@/components/whatsapp-float";
 import { COUNTRY_COOKIE } from "@/lib/constants";
 import { getActiveCountries, getSettingsMap } from "@/lib/region";
 
 export const dynamic = "force-dynamic";
+
+const siteUrl =
+  (process.env.NEXT_PUBLIC_SITE_URL || "https://alhadiinstitute.com").replace(/\/$/, "");
+
+export const metadata: Metadata = {
+  title: "Choose Your Country",
+  description:
+    "Select your country to view Al-Hadi Institute pricing and services in your local currency — Quran tutors, online tuition, and IT.",
+  keywords: [
+    "Al-Hadi Institute",
+    "Quran tutors",
+    "online tuition",
+    "IT services",
+    "international education",
+  ],
+  alternates: {
+    canonical: `${siteUrl}/`,
+  },
+};
 
 export default async function CountryGatePage() {
   const jar = await cookies();
@@ -30,6 +51,7 @@ export default async function CountryGatePage() {
           "https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&w=2000&q=80"
         }
       />
+      <WhatsAppFloat number={settings.whatsapp} />
     </div>
   );
 }
