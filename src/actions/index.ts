@@ -13,7 +13,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import type { InquiryStatus, InquiryType, PostStatus } from "@/generated/prisma/client";
 import { GBP_FX, PLAN_CURRENCIES } from "@/lib/currencies";
-import { sanitizeBlogHtml, slugifyBlog } from "@/lib/blog";
+import { sanitizeBlogHtml } from "@/lib/blog";
+import { slugifyBlog } from "@/lib/blog-slug";
 import { toActionError, type ActionResult } from "@/lib/action-result";
 
 export async function selectCountryAction(countryCode: string) {

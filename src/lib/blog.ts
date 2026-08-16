@@ -1,8 +1,8 @@
+import "server-only";
 import sanitizeHtml from "sanitize-html";
 
 /**
- * Server-safe HTML sanitizer (no jsdom). Used on Vercel/Node serverless
- * where isomorphic-dompurify fails with ERR_REQUIRE_ESM.
+ * Server-only HTML sanitizer (no jsdom). Must not be imported from Client Components.
  */
 export function sanitizeBlogHtml(html: string): string {
   return sanitizeHtml(html, {
@@ -41,13 +41,4 @@ export function sanitizeBlogHtml(html: string): string {
       }),
     },
   });
-}
-
-export function slugifyBlog(input: string): string {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80);
 }

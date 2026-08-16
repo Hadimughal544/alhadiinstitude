@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { slugifyBlog } from "@/lib/blog";
+import { slugifyBlog } from "@/lib/blog-slug";
 import {
   createBlogPostAction,
   updateBlogPostAction,
