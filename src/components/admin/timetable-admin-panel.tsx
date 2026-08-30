@@ -6,16 +6,18 @@ import { Plus } from "lucide-react";
 import {
   createLectureAction,
   deleteLectureAction,
+  regenerateLectureMeetAction,
   updateLectureAction,
 } from "@/actions/admin/lectures";
 import { AdminModal } from "@/components/admin/admin-modal";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { WeekGrid } from "@/components/timetable/week-grid";
 import { DAYS, timesInPakistanLabel } from "@/lib/timetable/time";
 import type { TimetableLecture } from "@/lib/timetable/types";
 import { toActionError } from "@/lib/action-result";
 
-export type TimetableTeacherOption = { id: string; name: string; googleConnected: boolean };
+export type TimetableTeacherOption = { id: string; name: string };
 export type TimetableStudentOption = { id: string; name: string };
 export type TimetableServiceOption = { id: string; title: string };
 
@@ -24,14 +26,15 @@ export function TimetableAdminPanel({
   teachers,
   students,
   services,
+  instituteGoogleConnected,
 }: {
   lectures: TimetableLecture[];
   teachers: TimetableTeacherOption[];
   students: TimetableStudentOption[];
   services: TimetableServiceOption[];
+  instituteGoogleConnected: boolean;
 }) {
-  const connectedTeachers = teachers.filter((teacher) => teacher.googleConnected);
-  const canCreate = connectedTeachers.length > 0 && students.length > 0;
+  const canCreate = instituteGoogleConnected && teachers.length > 0 && students.length > 0;
   const router = useRouter();
   const [open, setOpen] = useState<"create" | TimetableLecture | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,34 +53,38 @@ export function TimetableAdminPanel({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl">Timetable</h1>
-          <p className="mt-1 text-sm text-muted">
-            Weekly repeating lectures. Each save creates or updates a Google Meet link.{" "}
-            {timesInPakistanLabel()}.
-          </p>
-        </div>
-        <button
-          type="button"
-          disabled={!canCreate}
-          onClick={() => {
-            setError(null);
-            setOpen("create");
-          }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-cream disabled:opacity-50 dark:bg-gold dark:text-ink"
-        >
-          <Plus className="h-4 w-4" /> Add lecture
-        </button>
-      </div>
+      <PageHeader
+        title="Timetable"
+        description={`Weekly repeating lectures. Each lecture gets one open Google Meet link. ${timesInPakistanLabel()}.`}
+        action={
+          <Button
+            type="button"
+            disabled={!canCreate}
+            onClick={() => {
+              setError(null);
+              setOpen("create");
+            }}
+          >
+            <Plus className="h-4 w-4" /> Add lecture
+          </Button>
+        }
+      />
 
-      {connectedTeachers.length === 0 && (
+      {!instituteGoogleConnected && (
         <p className="mt-4 rounded-2xl border border-gold/40 bg-gold/10 p-4 text-sm">
-          Each teacher must connect Google Calendar on their Account page before you can assign
-          them to a lecture. They will be the Meet host.
+          Connect the institute Google account in{" "}
+          <a href="/admin/settings/google" className="font-medium underline">
+            Settings → Google
+          </a>{" "}
+          before creating lectures. Every class Meet link is created there.
         </p>
       )}
-      {connectedTeachers.length > 0 && students.length === 0 && (
+      {instituteGoogleConnected && teachers.length === 0 && (
+        <p className="mt-4 rounded-2xl border border-foreground/10 bg-card p-4 text-sm text-muted">
+          Add at least one teacher before creating a lecture.
+        </p>
+      )}
+      {instituteGoogleConnected && teachers.length > 0 && students.length === 0 && (
         <p className="mt-4 rounded-2xl border border-foreground/10 bg-card p-4 text-sm text-muted">
           Add at least one student before creating a lecture.
         </p>
@@ -168,17 +175,12 @@ export function TimetableAdminPanel({
               <select
                 name="teacherId"
                 required
-                defaultValue={
-                  open === "create"
-                    ? connectedTeachers[0]?.id
-                    : open.teacherId
-                }
+                defaultValue={open === "create" ? teachers[0]?.id : open.teacherId}
                 className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3"
               >
                 {teachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.id} disabled={!teacher.googleConnected}>
+                  <option key={teacher.id} value={teacher.id}>
                     {teacher.name}
-                    {teacher.googleConnected ? "" : " (Google not connected)"}
                   </option>
                 ))}
               </select>
@@ -214,6 +216,47 @@ export function TimetableAdminPanel({
                 ))}
               </div>
             </fieldset>
+            {open !== "create" && (
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-foreground/10 bg-card p-3 text-sm">
+                <span className="text-muted">
+                  {open.meetUrl ? (
+                    <>
+                      Meet link:{" "}
+                      <a
+                        href={open.meetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline"
+                      >
+                        {open.meetUrl.replace("https://", "")}
+                      </a>
+                    </>
+                  ) : (
+                    "No Meet link yet."
+                  )}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={pending}
+                  onClick={() => {
+                    if (!confirm("Generate a new Meet link? The old link will stop being shown.")) return;
+                    setError(null);
+                    startTransition(async () => {
+                      const result = await regenerateLectureMeetAction(open.id);
+                      if (!result.ok) {
+                        setError(result.error);
+                        return;
+                      }
+                      close();
+                    });
+                  }}
+                >
+                  Regenerate link
+                </Button>
+              </div>
+            )}
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={pending}>
@@ -225,7 +268,7 @@ export function TimetableAdminPanel({
                   variant="ghost"
                   disabled={pending}
                   onClick={() => {
-                    if (!confirm("Delete this lecture and its Google Calendar event?")) return;
+                    if (!confirm("Delete this lecture?")) return;
                     startTransition(async () => {
                       const result = await deleteLectureAction(open.id);
                       if (!result.ok) {

@@ -1,23 +1,33 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-import { createGoogleMeetProvider } from "@/lib/meet/google-calendar";
-import type { MeetProvider } from "@/lib/meet/types";
+import { decryptSecret } from "@/lib/crypto";
+import { createMeetSpaceProvider } from "@/lib/meet/google-meet-space";
+import { GOOGLE_MEET_SPACE_SCOPE } from "@/lib/meet/google-oauth";
+import type { InstituteMeetProvider } from "@/lib/meet/types";
 
-export type { MeetProvider, MeetEvent } from "@/lib/meet/types";
+export type { InstituteMeetProvider, OpenMeetSpace } from "@/lib/meet/types";
 
-export async function getGoogleConnectionForUser(userId: string) {
-  return prisma.googleConnection.findUnique({
-    where: { userId },
-  });
+/**
+ * The institute connects one Google account. It is keyed on the connecting
+ * admin's user id and kept a hard singleton by the OAuth callback, so the most
+ * recent row is authoritative.
+ */
+export async function getInstituteGoogleConnection() {
+  return prisma.googleConnection.findFirst({ orderBy: { connectedAt: "desc" } });
 }
 
-export async function getMeetProviderForTeacher(userId: string): Promise<MeetProvider> {
-  const connection = await getGoogleConnectionForUser(userId);
+export async function isInstituteGoogleConnected(): Promise<boolean> {
+  const connection = await getInstituteGoogleConnection();
+  return !!connection && (connection.scope ?? "").includes(GOOGLE_MEET_SPACE_SCOPE);
+}
+
+export async function getInstituteMeetProvider(): Promise<InstituteMeetProvider> {
+  const connection = await getInstituteGoogleConnection();
   if (!connection) {
     throw new Error(
-      "This teacher has not connected Google Calendar. Ask them to connect it on their Account page first."
+      "The institute Google account is not connected. Connect it in Admin → Settings → Google."
     );
   }
-  return createGoogleMeetProvider(connection.refreshToken);
+  return createMeetSpaceProvider(decryptSecret(connection.refreshToken));
 }

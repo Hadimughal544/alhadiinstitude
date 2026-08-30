@@ -1,48 +1,24 @@
 import { ChangePasswordForm } from "@/components/dashboard/change-password-form";
-import { GoogleConnectCard } from "@/components/dashboard/google-connect-card";
-import { disconnectTeacherGoogleFormAction } from "@/actions/teacher/google";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireTeacher } from "@/lib/auth-guards";
-import { getGoogleConnectionForUser } from "@/lib/meet";
 
 export const dynamic = "force-dynamic";
 
-export default async function TeacherAccountPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ google?: string }>;
-}) {
+export default async function TeacherAccountPage() {
   const session = await requireTeacher();
-  const [connection, params] = await Promise.all([
-    getGoogleConnectionForUser(session.user.id),
-    searchParams,
-  ]);
-
-  const googleError =
-    params.google === "error"
-      ? "Google connection failed. Confirm the Calendar API is enabled, accept Calendar access, and try again."
-      : params.google === "denied"
-        ? "Google access was denied."
-        : null;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-3xl">Account</h1>
-        <p className="mt-1 text-sm text-muted">{session.user.email}</p>
-      </div>
-      <GoogleConnectCard
-        connected={!!connection}
-        email={connection?.email}
-        error={googleError}
-        connectHref="/api/teacher/google/connect"
-        disconnectAction={disconnectTeacherGoogleFormAction}
-      />
-      <div>
-        <h2 className="font-semibold">Password</h2>
-        <div className="mt-4">
+    <div className="max-w-2xl space-y-6">
+      <PageHeader title="Account" description={session.user.email} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Password</CardTitle>
+        </CardHeader>
+        <CardContent>
           <ChangePasswordForm />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

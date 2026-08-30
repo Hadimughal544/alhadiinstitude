@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -72,6 +72,7 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
+  const effectiveSlug = slugTouched ? slug : slugifyBlog(title);
   const [excerpt, setExcerpt] = useState(post?.excerpt ?? "");
   const [coverImage, setCoverImage] = useState(post?.coverImage ?? "");
   const [attachmentUrl, setAttachmentUrl] = useState(post?.attachmentUrl ?? "");
@@ -116,12 +117,6 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
       setContentHtml(ed.getHTML());
     },
   });
-
-  useEffect(() => {
-    if (!slugTouched) {
-      setSlug(slugifyBlog(title));
-    }
-  }, [title, slugTouched]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -182,7 +177,7 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
   const submit = (formData: FormData) => {
     setError(null);
     formData.set("title", title);
-    formData.set("slug", slug);
+    formData.set("slug", effectiveSlug);
     formData.set("excerpt", excerpt);
     formData.set("content", contentHtml || editor?.getHTML() || "");
     formData.set("coverImage", coverImage);
@@ -251,7 +246,7 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
         <label className="block text-sm sm:col-span-2">
           <span className="mb-1 block font-medium">Slug</span>
           <input
-            value={slug}
+            value={effectiveSlug}
             onChange={(e) => {
               setSlugTouched(true);
               setSlug(e.target.value);
@@ -482,7 +477,7 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={pending || !title.trim() || !slug.trim()}>
+        <Button type="submit" disabled={pending || !title.trim() || !effectiveSlug.trim()}>
           {pending ? "Saving…" : mode === "create" ? "Create post" : "Save changes"}
         </Button>
         {mode === "edit" && (

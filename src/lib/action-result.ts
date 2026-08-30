@@ -15,11 +15,16 @@ export function toActionError(error: unknown, fallback = "Something went wrong. 
     if (msg.includes("Unauthorized")) {
       return "You must be signed in with the right role to do this.";
     }
-    if (msg.includes("Cloudinary") || msg.includes("Google Calendar") || msg.includes("Meet permission")) {
+    if (
+      msg.includes("Cloudinary") ||
+      msg.includes("Google Meet") ||
+      msg.includes("Meet permission") ||
+      msg.includes("institute Google account")
+    ) {
       return msg;
     }
     if (msg.toLowerCase().includes("insufficient authentication scopes")) {
-      return "Google Calendar is missing Meet permission. Open Settings, click Reconnect Google, and accept Calendar access.";
+      return "The institute Google account is missing Meet permission. Reconnect it in Admin → Settings → Google and accept Meet access.";
     }
     // Avoid dumping huge Prisma dumps to the UI
     if (msg.includes("Invalid `") || msg.includes("prisma.")) {

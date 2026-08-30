@@ -21,47 +21,112 @@ export type DashboardNavItem = {
   exact?: boolean;
 };
 
+export type DashboardNavGroup = {
+  label: string;
+  items: DashboardNavItem[];
+};
+
 export type DashboardConfig = {
   title: string;
   homeHref: string;
   viewSiteHref?: string;
-  nav: DashboardNavItem[];
+  accountHref?: string;
+  groups: DashboardNavGroup[];
 };
+
+const ADMIN_GROUPS: DashboardNavGroup[] = [
+  {
+    label: "Overview",
+    items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true }],
+  },
+  {
+    label: "People",
+    items: [
+      { href: "/admin/teachers", label: "Teachers", icon: Users },
+      { href: "/admin/students", label: "Students", icon: GraduationCap },
+    ],
+  },
+  {
+    label: "Academics",
+    items: [{ href: "/admin/timetable", label: "Timetable", icon: CalendarDays }],
+  },
+  {
+    label: "Marketing",
+    items: [
+      { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
+      { href: "/admin/blogs", label: "Blogs", icon: Newspaper },
+      { href: "/admin/services", label: "Services", icon: Layers },
+      { href: "/admin/plans", label: "Plans", icon: CreditCard },
+      { href: "/admin/countries", label: "Countries", icon: Globe2 },
+    ],
+  },
+  {
+    label: "System",
+    items: [{ href: "/admin/settings", label: "Settings", icon: Settings }],
+  },
+];
+
+const TEACHER_GROUPS: DashboardNavGroup[] = [
+  {
+    label: "Overview",
+    items: [{ href: "/teacher", label: "Dashboard", icon: LayoutDashboard, exact: true }],
+  },
+  {
+    label: "Schedule",
+    items: [{ href: "/teacher/timetable", label: "Timetable", icon: CalendarDays }],
+  },
+  {
+    label: "Account",
+    items: [{ href: "/teacher/account", label: "Account", icon: UserRound }],
+  },
+];
+
+const STUDENT_GROUPS: DashboardNavGroup[] = [
+  {
+    label: "Overview",
+    items: [{ href: "/student", label: "Dashboard", icon: LayoutDashboard, exact: true }],
+  },
+  {
+    label: "Schedule",
+    items: [{ href: "/student/timetable", label: "Timetable", icon: CalendarDays }],
+  },
+  {
+    label: "Account",
+    items: [{ href: "/student/account", label: "Account", icon: UserRound }],
+  },
+];
 
 export const DASHBOARD_CONFIG: Record<PortalRole, DashboardConfig> = {
   ADMIN: {
     title: "Admin",
     homeHref: "/admin",
     viewSiteHref: "/home",
-    nav: [
-      { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-      { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
-      { href: "/admin/teachers", label: "Teachers", icon: Users },
-      { href: "/admin/students", label: "Students", icon: GraduationCap },
-      { href: "/admin/timetable", label: "Timetable", icon: CalendarDays },
-      { href: "/admin/blogs", label: "Blogs", icon: Newspaper },
-      { href: "/admin/services", label: "Services", icon: Layers },
-      { href: "/admin/plans", label: "Plans", icon: CreditCard },
-      { href: "/admin/countries", label: "Countries", icon: Globe2 },
-      { href: "/admin/settings", label: "Settings", icon: Settings },
-    ],
+    accountHref: "/admin/settings",
+    groups: ADMIN_GROUPS,
   },
   TEACHER: {
     title: "Teacher",
     homeHref: "/teacher",
-    nav: [
-      { href: "/teacher", label: "Dashboard", icon: LayoutDashboard, exact: true },
-      { href: "/teacher/timetable", label: "Timetable", icon: CalendarDays },
-      { href: "/teacher/account", label: "Account", icon: UserRound },
-    ],
+    accountHref: "/teacher/account",
+    groups: TEACHER_GROUPS,
   },
   STUDENT: {
     title: "Student",
     homeHref: "/student",
-    nav: [
-      { href: "/student", label: "Dashboard", icon: LayoutDashboard, exact: true },
-      { href: "/student/timetable", label: "Timetable", icon: CalendarDays },
-      { href: "/student/account", label: "Account", icon: UserRound },
-    ],
+    accountHref: "/student/account",
+    groups: STUDENT_GROUPS,
   },
 };
+
+export function getPageTitle(pathname: string, role: PortalRole): string {
+  const config = DASHBOARD_CONFIG[role];
+  for (const group of config.groups) {
+    for (const item of group.items) {
+      const active = item.exact
+        ? pathname === item.href
+        : pathname === item.href || pathname.startsWith(`${item.href}/`);
+      if (active) return item.label;
+    }
+  }
+  return config.title;
+}

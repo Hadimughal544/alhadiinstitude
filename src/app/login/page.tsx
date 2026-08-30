@@ -4,6 +4,9 @@ import { FormEvent, useState, useTransition } from "react";
 import { signIn } from "next-auth/react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
@@ -32,42 +35,39 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mesh-bg flex min-h-screen items-center justify-center px-4">
+    <div className="mesh-bg flex min-h-screen items-center justify-center px-4 py-12">
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <form
-        className="w-full max-w-md rounded-3xl border border-foreground/10 bg-card p-8 shadow-xl"
-        onSubmit={handleSubmit}
-      >
-        <BrandLogo href="/" size="md" />
-        <h1 className="mt-4 text-xl font-semibold">Sign in</h1>
-        <p className="mt-1 text-sm text-muted">Use the account provided by the institute.</p>
-        <label className="mt-6 block text-sm">
-          <span className="mb-1.5 block font-medium">Email</span>
-          <input
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3 outline-none focus:ring-2 focus:ring-gold/50"
-          />
-        </label>
-        <label className="mt-4 block text-sm">
-          <span className="mb-1.5 block font-medium">Password</span>
-          <input
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-            className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3 outline-none focus:ring-2 focus:ring-gold/50"
-          />
-        </label>
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-        <Button type="submit" className="mt-6 w-full" disabled={pending}>
-          {pending ? "Signing in..." : "Sign in"}
-        </Button>
-      </form>
+      <Card className="w-full max-w-md shadow-[var(--shadow-card)]">
+        <CardHeader className="items-center text-center">
+          <BrandLogo href="/" size="md" />
+          <CardTitle className="mt-4 font-display text-xl">Sign in</CardTitle>
+          <CardDescription>Use the account provided by the institute.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <Field>
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" name="email" type="email" required autoComplete="email" />
+            </Field>
+            <Field>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+              />
+            </Field>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending ? "Signing in..." : "Sign in"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

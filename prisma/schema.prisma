@@ -202,6 +202,7 @@ model Lecture {
   teacherId     String
   serviceId     String?
   meetUrl       String?
+  meetSpaceId   String?
   googleEventId String?
   active        Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -230,7 +231,9 @@ model GoogleConnection {
   userId       String   @unique
   email        String
   refreshToken String   @db.Text
+  scope        String?  @db.Text
   connectedAt  DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

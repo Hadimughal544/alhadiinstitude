@@ -13,7 +13,16 @@ export function Providers({
   return (
     <ThemeProvider initialTheme={initialTheme}>
       {children}
-      <Toaster richColors position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          classNames: {
+            toast: "border border-border bg-card text-foreground shadow-[var(--shadow-card)]",
+            title: "font-medium",
+            description: "text-muted",
+          },
+        }}
+      />
     </ThemeProvider>
   );
 }

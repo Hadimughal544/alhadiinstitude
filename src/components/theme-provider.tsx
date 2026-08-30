@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   isStoredTheme,
   persistThemeCookie,
@@ -19,11 +27,6 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function getSystemTheme(): ResolvedTheme {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
 function readStoredTheme(): ThemeName {
   if (typeof window === "undefined") return "system";
   try {
@@ -35,13 +38,16 @@ function readStoredTheme(): ThemeName {
   return "system";
 }
 
-function applyTheme(theme: ThemeName) {
-  const resolved = theme === "system" ? getSystemTheme() : theme;
+function applyThemeClass(resolved: ResolvedTheme) {
   const root = document.documentElement;
   root.classList.remove("light", "dark");
   root.classList.add(resolved);
   root.style.colorScheme = resolved;
-  return resolved;
+}
+
+function resolveTheme(theme: ThemeName, systemDark: boolean): ResolvedTheme {
+  if (theme === "system") return systemDark ? "dark" : "light";
+  return theme;
 }
 
 export function ThemeProvider({
@@ -51,33 +57,31 @@ export function ThemeProvider({
   children: React.ReactNode;
   initialTheme?: ThemeName;
 }) {
-  const [theme, setThemeState] = useState<ThemeName>(initialTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(
-    initialTheme === "dark" || initialTheme === "light" ? initialTheme : "light"
-  );
+  const [theme, setThemeState] = useState<ThemeName>(() => {
+    if (typeof window === "undefined") return initialTheme;
+    return readStoredTheme();
+  });
+  const [systemDark, setSystemDark] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
 
-  useEffect(() => {
-    const stored = readStoredTheme();
-    setThemeState(stored);
-    setResolvedTheme(applyTheme(stored));
-    persistThemeCookie(stored);
-  }, []);
+  const resolvedTheme = resolveTheme(theme, systemDark);
+
+  useLayoutEffect(() => {
+    applyThemeClass(resolvedTheme);
+    persistThemeCookie(theme);
+  }, [theme, resolvedTheme]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      if (theme === "system") {
-        setResolvedTheme(applyTheme("system"));
-      }
-    };
+    const onChange = () => setSystemDark(media.matches);
     media.addEventListener("change", onChange);
     return () => media.removeEventListener("change", onChange);
-  }, [theme]);
+  }, []);
 
   const setTheme = useCallback((next: ThemeName) => {
     setThemeState(next);
-    setResolvedTheme(applyTheme(next));
-    persistThemeCookie(next);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {

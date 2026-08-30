@@ -222,7 +222,14 @@ export function compareLectureTime(a: { startTime: string }, b: { startTime: str
   return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
 }
 
-export const TEACHER_JOIN_MINUTES_BEFORE = 5;
+/** Minutes before class start that the Join button appears (for everyone). */
+export const JOIN_MINUTES_BEFORE = 10;
+
+/**
+ * When false, the Join button shows any time before the class ends (the Meet room
+ * is open anyway). When true (default), it only shows within the window below.
+ */
+export const JOIN_REQUIRE_WINDOW = process.env.JOIN_REQUIRE_WINDOW !== "false";
 
 export type JoinRole = "teacher" | "student";
 export type JoinWindowState = "waiting" | "open" | "ended";
@@ -240,17 +247,16 @@ export function minutesOfDayInTimezone(date: Date, timezone: string): number {
 
 export function joinWindow(
   lecture: SourceSlot,
-  role: JoinRole,
+  _role: JoinRole,
   now = new Date(),
   viewerTimezone = lecture.timezone || DEFAULT_TIMEZONE
 ): { state: JoinWindowState; opensAt: string } {
   const { start, end } = lectureOccurrence(lecture, now);
-  const openAt = new Date(
-    start.getTime() - (role === "teacher" ? TEACHER_JOIN_MINUTES_BEFORE * 60 * 1000 : 0)
-  );
+  const openAt = new Date(start.getTime() - JOIN_MINUTES_BEFORE * 60 * 1000);
   const opensAt = formatHm(openAt, viewerTimezone);
 
   if (now.getTime() >= end.getTime()) return { state: "ended", opensAt };
+  if (!JOIN_REQUIRE_WINDOW) return { state: "open", opensAt };
   if (now.getTime() >= openAt.getTime()) return { state: "open", opensAt };
   return { state: "waiting", opensAt };
 }

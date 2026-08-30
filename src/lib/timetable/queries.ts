@@ -104,24 +104,13 @@ export function todaysLectures(lectures: TimetableLecture[], timezone: string) {
 }
 
 export async function listActiveTeachers() {
-  const teachers = await prisma.teacherProfile.findMany({
+  return prisma.teacherProfile.findMany({
     where: { user: { active: true } },
     include: {
       user: { select: { id: true, name: true, email: true, phone: true } },
     },
     orderBy: { user: { name: "asc" } },
   });
-
-  const connections = await prisma.googleConnection.findMany({
-    where: { userId: { in: teachers.map((teacher) => teacher.userId) } },
-    select: { userId: true },
-  });
-  const connectedUserIds = new Set(connections.map((row) => row.userId));
-
-  return teachers.map((teacher) => ({
-    ...teacher,
-    googleConnected: connectedUserIds.has(teacher.userId),
-  }));
 }
 
 export async function listActiveStudents() {

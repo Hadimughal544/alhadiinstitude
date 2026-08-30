@@ -1,4 +1,5 @@
 import { WeekGrid } from "@/components/timetable/week-grid";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { requireTeacher } from "@/lib/auth-guards";
 import { getLecturesForTeacher } from "@/lib/timetable/queries";
 import { timesInPakistanLabel } from "@/lib/timetable/time";
@@ -11,11 +12,8 @@ export default async function TeacherTimetablePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl">Timetable</h1>
-        <p className="mt-1 text-sm text-muted">{timesInPakistanLabel()}.</p>
-      </div>
-      <WeekGrid lectures={lectures} showJoin joinRole="teacher" />
+      <PageHeader title="Timetable" description={timesInPakistanLabel()} />
+      <WeekGrid lectures={lectures} showJoin joinRole="teacher" showStudents />
     </div>
   );
 }

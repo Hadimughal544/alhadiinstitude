@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import { toActionError, type ActionResult } from "@/lib/action-result";
-import { getMeetProviderForTeacher } from "@/lib/meet";
+import { getInstituteMeetProvider } from "@/lib/meet";
 import { assertNoLectureOverlap } from "@/lib/timetable/overlap";
 import { getInstituteTimezone } from "@/lib/timetable/queries";
 import { isValidTime, normalizeTime } from "@/lib/timetable/time";
@@ -35,15 +35,14 @@ function parseStudentIds(formData: FormData) {
     .filter(Boolean);
 }
 
-async function getTeacherUserId(teacherProfileId: string) {
+async function assertTeacherActive(teacherProfileId: string) {
   const teacher = await prisma.teacherProfile.findUnique({
     where: { id: teacherProfileId },
-    include: { user: { select: { id: true, active: true } } },
+    include: { user: { select: { active: true } } },
   });
   if (!teacher || !teacher.user.active) {
     throw new Error("Teacher not found or inactive.");
   }
-  return teacher.userId;
 }
 
 async function assertStudentsExist(studentIds: string[]) {
@@ -59,20 +58,22 @@ async function assertStudentsExist(studentIds: string[]) {
   }
 }
 
+function parseLectureForm(formData: FormData) {
+  return lectureSchema.safeParse({
+    title: formData.get("title"),
+    dayOfWeek: formData.get("dayOfWeek"),
+    startTime: normalizeTime(String(formData.get("startTime") || "")),
+    endTime: normalizeTime(String(formData.get("endTime") || "")),
+    teacherId: formData.get("teacherId"),
+    serviceId: formData.get("serviceId") || null,
+    studentIds: parseStudentIds(formData),
+  });
+}
+
 export async function createLectureAction(formData: FormData): Promise<ActionResult> {
-  let googleEventId: string | undefined;
-  let teacherUserId: string | undefined;
   try {
     await requireAdmin();
-    const parsed = lectureSchema.safeParse({
-      title: formData.get("title"),
-      dayOfWeek: formData.get("dayOfWeek"),
-      startTime: normalizeTime(String(formData.get("startTime") || "")),
-      endTime: normalizeTime(String(formData.get("endTime") || "")),
-      teacherId: formData.get("teacherId"),
-      serviceId: formData.get("serviceId") || null,
-      studentIds: parseStudentIds(formData),
-    });
+    const parsed = parseLectureForm(formData);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message || "Check the lecture fields." };
     }
@@ -89,47 +90,40 @@ export async function createLectureAction(formData: FormData): Promise<ActionRes
       studentIds: parsed.data.studentIds,
     });
 
-    teacherUserId = await getTeacherUserId(parsed.data.teacherId);
+    await assertTeacherActive(parsed.data.teacherId);
     await assertStudentsExist(parsed.data.studentIds);
 
-    const meet = await getMeetProviderForTeacher(teacherUserId);
-    const event = await meet.createLectureEvent({
-      title: parsed.data.title,
-      dayOfWeek: parsed.data.dayOfWeek,
-      startTime: parsed.data.startTime,
-      endTime: parsed.data.endTime,
-      timezone,
-    });
-    googleEventId = event.googleEventId;
+    const meet = await getInstituteMeetProvider();
+    const space = await meet.createOpenSpace();
 
-    const lecture = await prisma.lecture.create({
-      data: {
-        title: parsed.data.title,
-        dayOfWeek: parsed.data.dayOfWeek,
-        startTime: parsed.data.startTime,
-        endTime: parsed.data.endTime,
-        timezone,
-        teacherId: parsed.data.teacherId,
-        serviceId: parsed.data.serviceId || null,
-        meetUrl: event.meetUrl,
-        googleEventId: event.googleEventId,
-        enrollments: {
-          create: parsed.data.studentIds.map((studentId) => ({ studentId })),
+    try {
+      const lecture = await prisma.lecture.create({
+        data: {
+          title: parsed.data.title,
+          dayOfWeek: parsed.data.dayOfWeek,
+          startTime: parsed.data.startTime,
+          endTime: parsed.data.endTime,
+          timezone,
+          teacherId: parsed.data.teacherId,
+          serviceId: parsed.data.serviceId || null,
+          meetUrl: space.meetUrl,
+          meetSpaceId: space.spaceId,
+          googleEventId: null,
+          enrollments: {
+            create: parsed.data.studentIds.map((studentId) => ({ studentId })),
+          },
         },
-      },
-    });
+      });
 
-    revalidateLectures();
-    return { ok: true, id: lecture.id, message: "Lecture created with a Google Meet link." };
-  } catch (error) {
-    if (googleEventId && teacherUserId) {
-      try {
-        const meet = await getMeetProviderForTeacher(teacherUserId);
-        await meet.deleteLectureEvent(googleEventId);
-      } catch {
-        // The Calendar event may remain on the teacher's calendar if the DB write failed.
-      }
+      revalidateLectures();
+      return { ok: true, id: lecture.id, message: "Lecture created with an open Google Meet link." };
+    } catch (dbError) {
+      // A Meet space can't be deleted; ending any (unlikely) live call is the most
+      // we can do. An orphaned, unused space is harmless.
+      await meet.endActiveConference(space.spaceId).catch(() => {});
+      throw dbError;
     }
+  } catch (error) {
     return { ok: false, error: toActionError(error, "Could not create the lecture.") };
   }
 }
@@ -138,17 +132,14 @@ export async function updateLectureAction(formData: FormData): Promise<ActionRes
   try {
     await requireAdmin();
     const id = String(formData.get("id") || "");
-    const parsed = lectureSchema.safeParse({
-      title: formData.get("title"),
-      dayOfWeek: formData.get("dayOfWeek"),
-      startTime: normalizeTime(String(formData.get("startTime") || "")),
-      endTime: normalizeTime(String(formData.get("endTime") || "")),
-      teacherId: formData.get("teacherId"),
-      serviceId: formData.get("serviceId") || null,
-      studentIds: parseStudentIds(formData),
-    });
+    const parsed = parseLectureForm(formData);
     if (!id || !parsed.success) {
-      return { ok: false, error: parsed.success ? "Missing lecture id." : parsed.error.issues[0]?.message || "Check the lecture fields." };
+      return {
+        ok: false,
+        error: parsed.success
+          ? "Missing lecture id."
+          : parsed.error.issues[0]?.message || "Check the lecture fields.",
+      };
     }
     if (parsed.data.startTime >= parsed.data.endTime) {
       return { ok: false, error: "End time must be after start time." };
@@ -167,52 +158,18 @@ export async function updateLectureAction(formData: FormData): Promise<ActionRes
       excludeLectureId: id,
     });
 
-    const teacherUserId = await getTeacherUserId(parsed.data.teacherId);
+    await assertTeacherActive(parsed.data.teacherId);
     await assertStudentsExist(parsed.data.studentIds);
-    const meet = await getMeetProviderForTeacher(teacherUserId);
 
+    // The Meet link is institute-owned and teacher-agnostic, so it survives every
+    // edit. Only legacy rows (created under the old per-teacher flow) need one.
     let meetUrl = existing.meetUrl;
-    let googleEventId = existing.googleEventId;
-    const teacherChanged = existing.teacherId !== parsed.data.teacherId;
-
-    if (teacherChanged && existing.googleEventId) {
-      try {
-        const previousTeacherUserId = await getTeacherUserId(existing.teacherId);
-        const previousMeet = await getMeetProviderForTeacher(previousTeacherUserId);
-        await previousMeet.deleteLectureEvent(existing.googleEventId);
-      } catch {
-        // Old host event can stay if that teacher disconnected Google.
-      }
-      const event = await meet.createLectureEvent({
-        title: parsed.data.title,
-        dayOfWeek: parsed.data.dayOfWeek,
-        startTime: parsed.data.startTime,
-        endTime: parsed.data.endTime,
-        timezone,
-      });
-      meetUrl = event.meetUrl;
-      googleEventId = event.googleEventId;
-    } else if (existing.googleEventId) {
-      const event = await meet.updateLectureEvent({
-        googleEventId: existing.googleEventId,
-        title: parsed.data.title,
-        dayOfWeek: parsed.data.dayOfWeek,
-        startTime: parsed.data.startTime,
-        endTime: parsed.data.endTime,
-        timezone,
-      });
-      meetUrl = event.meetUrl || existing.meetUrl;
-      googleEventId = event.googleEventId;
-    } else {
-      const event = await meet.createLectureEvent({
-        title: parsed.data.title,
-        dayOfWeek: parsed.data.dayOfWeek,
-        startTime: parsed.data.startTime,
-        endTime: parsed.data.endTime,
-        timezone,
-      });
-      meetUrl = event.meetUrl;
-      googleEventId = event.googleEventId;
+    let meetSpaceId = existing.meetSpaceId;
+    if (!meetSpaceId) {
+      const meet = await getInstituteMeetProvider();
+      const space = await meet.createOpenSpace();
+      meetUrl = space.meetUrl;
+      meetSpaceId = space.spaceId;
     }
 
     await prisma.$transaction([
@@ -228,7 +185,8 @@ export async function updateLectureAction(formData: FormData): Promise<ActionRes
           teacherId: parsed.data.teacherId,
           serviceId: parsed.data.serviceId || null,
           meetUrl,
-          googleEventId,
+          meetSpaceId,
+          googleEventId: null,
           enrollments: {
             create: parsed.data.studentIds.map((studentId) => ({ studentId })),
           },
@@ -243,21 +201,42 @@ export async function updateLectureAction(formData: FormData): Promise<ActionRes
   }
 }
 
+export async function regenerateLectureMeetAction(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const existing = await prisma.lecture.findUnique({ where: { id } });
+    if (!existing) return { ok: false, error: "Lecture not found." };
+
+    const meet = await getInstituteMeetProvider();
+    const space = await meet.createOpenSpace();
+    await prisma.lecture.update({
+      where: { id },
+      data: { meetUrl: space.meetUrl, meetSpaceId: space.spaceId, googleEventId: null },
+    });
+
+    if (existing.meetSpaceId && existing.meetSpaceId !== space.spaceId) {
+      await meet.endActiveConference(existing.meetSpaceId).catch(() => {});
+    }
+
+    revalidateLectures();
+    return { ok: true, id, message: "New Google Meet link generated." };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Could not regenerate the Meet link.") };
+  }
+}
+
 export async function deleteLectureAction(id: string): Promise<ActionResult> {
   try {
     await requireAdmin();
-    const existing = await prisma.lecture.findUnique({
-      where: { id },
-      include: { teacher: { select: { userId: true } } },
-    });
+    const existing = await prisma.lecture.findUnique({ where: { id } });
     if (!existing) return { ok: false, error: "Lecture not found." };
 
-    if (existing.googleEventId) {
+    if (existing.meetSpaceId) {
       try {
-        const meet = await getMeetProviderForTeacher(existing.teacher.userId);
-        await meet.deleteLectureEvent(existing.googleEventId);
+        const meet = await getInstituteMeetProvider();
+        await meet.endActiveConference(existing.meetSpaceId);
       } catch {
-        // Still remove the lecture if Google is disconnected or the event is already gone.
+        // Spaces have no delete endpoint; a leftover space is harmless.
       }
     }
 

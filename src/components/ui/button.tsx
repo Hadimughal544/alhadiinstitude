@@ -1,30 +1,42 @@
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "outline";
-  size?: "sm" | "md" | "lg";
-};
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        primary:
+          "rounded-full bg-teal text-cream shadow-sm hover:bg-teal-light dark:bg-gold dark:text-ink dark:hover:bg-gold-soft",
+        secondary:
+          "rounded-full bg-gold text-ink hover:bg-gold-soft",
+        outline:
+          "rounded-full border border-border bg-transparent text-foreground hover:bg-accent",
+        ghost:
+          "rounded-lg bg-transparent text-muted hover:bg-foreground/5 hover:text-foreground",
+        destructive:
+          "rounded-full bg-destructive-muted text-destructive hover:bg-destructive/20",
+        link: "rounded-none text-teal underline-offset-4 hover:underline dark:text-gold",
+      },
+      size: {
+        sm: "h-8 px-3 text-xs",
+        md: "h-10 px-5 text-sm",
+        lg: "h-11 px-6 text-sm",
+        icon: "h-9 w-9 rounded-lg",
+      },
+    },
+    defaultVariants: {
+      variant: "primary",
+      size: "md",
+    },
+  }
+);
 
-export function Button({
-  className,
-  variant = "primary",
-  size = "md",
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 disabled:opacity-50",
-        variant === "primary" && "bg-teal text-cream hover:bg-teal-light shadow-lg shadow-teal/20",
-        variant === "secondary" && "bg-gold text-ink hover:bg-gold-soft",
-        variant === "outline" && "border border-teal/30 bg-transparent text-teal hover:bg-teal/5 dark:text-cream dark:border-cream/20",
-        variant === "ghost" && "bg-transparent hover:bg-foreground/5",
-        size === "sm" && "h-9 px-4 text-sm",
-        size === "md" && "h-11 px-6 text-sm",
-        size === "lg" && "h-12 px-8 text-base",
-        className
-      )}
-      {...props}
-    />
-  );
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
+  VariantProps<typeof buttonVariants>;
+
+export function Button({ className, variant, size, ...props }: ButtonProps) {
+  return <button className={cn(buttonVariants({ variant, size }), className)} {...props} />;
 }
+
+export { buttonVariants };

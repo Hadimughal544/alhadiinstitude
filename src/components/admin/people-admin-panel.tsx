@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { AdminModal } from "@/components/admin/admin-modal";
+import { DataListRow } from "@/components/dashboard/data-list-row";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { UserActionResult } from "@/actions/admin/users";
 import { toActionError } from "@/lib/action-result";
 
@@ -48,11 +51,23 @@ export function PeopleAdminPanel({
   const [error, setError] = useState<string | null>(null);
   const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [search, setSearch] = useState("");
 
   const title = kind === "teacher" ? "Teachers" : "Students";
   const extraLabel = kind === "teacher" ? "Specialization" : "Age group";
   const extraName = kind === "teacher" ? "specialization" : "ageGroup";
   const countLabel = kind === "teacher" ? "lectures" : "enrollments";
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return people;
+    return people.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.email.toLowerCase().includes(q) ||
+        (p.countryName?.toLowerCase().includes(q) ?? false)
+    );
+  }, [people, search]);
 
   const close = () => {
     setOpen(null);
@@ -81,24 +96,28 @@ export function PeopleAdminPanel({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl">{title}</h1>
-          <p className="mt-1 text-sm text-muted">
-            Admin-created accounts. People sign in at /login with the password you set or generate.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setError(null);
-            setOpen("create");
-          }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-cream dark:bg-gold dark:text-ink"
-        >
-          <Plus className="h-4 w-4" /> Add {kind}
-        </button>
-      </div>
+      <PageHeader
+        title={title}
+        description="Admin-created accounts. People sign in at /login with the password you set or generate."
+        action={
+          <Button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setOpen("create");
+            }}
+          >
+            <Plus className="h-4 w-4" /> Add {kind}
+          </Button>
+        }
+      />
+
+      <Input
+        placeholder={`Search ${kind}s…`}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="mb-6 max-w-md"
+      />
 
       {passwordNotice && (
         <div className="mt-4 rounded-2xl border border-gold/40 bg-gold/10 p-4 text-sm">
@@ -114,45 +133,27 @@ export function PeopleAdminPanel({
         </div>
       )}
 
-      <div className="mt-6 grid gap-3">
-        {people.length === 0 && (
-          <p className="rounded-2xl border border-dashed border-foreground/15 p-8 text-center text-sm text-muted">
-            No {kind}s yet.
+      <div className="grid gap-3">
+        {filtered.length === 0 && (
+          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">
+            No {kind}s found.
           </p>
         )}
-        {people.map((person) => (
-          <button
+        {filtered.map((person) => (
+          <DataListRow
             key={person.id}
-            type="button"
+            name={person.name}
+            subtitle={person.email}
+            meta={[person.countryName, person.extra, `${person.count} ${countLabel}`]
+              .filter(Boolean)
+              .join(" · ")}
+            badge={person.active ? "Active" : "Inactive"}
+            badgeVariant={person.active ? "success" : "outline"}
             onClick={() => {
               setError(null);
               setOpen(person);
             }}
-            className="rounded-2xl border border-foreground/10 bg-card p-4 text-left shadow-sm transition hover:border-gold/40"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <p className="font-semibold">{person.name}</p>
-                <p className="text-sm text-muted">{person.email}</p>
-                {kind === "student" && person.countryName && (
-                  <p className="mt-1 text-xs text-muted">{person.countryName}</p>
-                )}
-                {person.extra && <p className="mt-1 text-xs text-muted">{person.extra}</p>}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-foreground/5 px-2.5 py-1 text-xs">
-                  {person.count} {countLabel}
-                </span>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                    person.active ? "bg-teal/10 text-teal dark:bg-gold/15 dark:text-gold" : "bg-red-500/10 text-red-600"
-                  }`}
-                >
-                  {person.active ? "Active" : "Inactive"}
-                </span>
-              </div>
-            </div>
-          </button>
+          />
         ))}
       </div>
 

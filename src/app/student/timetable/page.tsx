@@ -1,4 +1,5 @@
 import { WeekGrid } from "@/components/timetable/week-grid";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { requireStudent } from "@/lib/auth-guards";
 import { getStudentSchedule } from "@/lib/timetable/queries";
 import { timesInZoneLabel } from "@/lib/timetable/time";
@@ -11,11 +12,8 @@ export default async function StudentTimetablePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl">Timetable</h1>
-        <p className="mt-1 text-sm text-muted">{timesInZoneLabel(timezone)}.</p>
-      </div>
-      <WeekGrid lectures={lectures} showJoin joinRole="student" />
+      <PageHeader title="Timetable" description={timesInZoneLabel(timezone)} />
+      <WeekGrid lectures={lectures} showJoin joinRole="student" timezone={timezone} />
     </div>
   );
 }
