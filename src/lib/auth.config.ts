@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { dashboardPathForRole, pathMatchesPrefix } from "@/lib/roles";
 
 export const authConfig: NextAuthConfig = {
   trustHost: true,
@@ -19,15 +20,39 @@ export const authConfig: NextAuthConfig = {
   ],
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
+      const role = auth?.user?.role;
       const isLoggedIn = !!auth?.user;
-      const isAdmin = auth?.user?.role === "ADMIN";
       const { pathname } = nextUrl;
 
       if (pathname.startsWith("/login") && isLoggedIn) {
-        return Response.redirect(new URL(isAdmin ? "/admin" : "/home", nextUrl));
+        return Response.redirect(new URL(dashboardPathForRole(role), nextUrl));
       }
 
-      if (pathname.startsWith("/admin") && !isAdmin) {
+      if (pathMatchesPrefix(pathname, "/admin")) {
+        if (role === "ADMIN") return true;
+        if (isLoggedIn) {
+          return Response.redirect(new URL(dashboardPathForRole(role), nextUrl));
+        }
+        const loginUrl = new URL("/login", nextUrl);
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return Response.redirect(loginUrl);
+      }
+
+      if (pathMatchesPrefix(pathname, "/teacher")) {
+        if (role === "TEACHER") return true;
+        if (isLoggedIn) {
+          return Response.redirect(new URL(dashboardPathForRole(role), nextUrl));
+        }
+        const loginUrl = new URL("/login", nextUrl);
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return Response.redirect(loginUrl);
+      }
+
+      if (pathMatchesPrefix(pathname, "/student")) {
+        if (role === "STUDENT") return true;
+        if (isLoggedIn) {
+          return Response.redirect(new URL(dashboardPathForRole(role), nextUrl));
+        }
         const loginUrl = new URL("/login", nextUrl);
         loginUrl.searchParams.set("callbackUrl", pathname);
         return Response.redirect(loginUrl);
@@ -38,14 +63,14 @@ export const authConfig: NextAuthConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id!;
-        token.role = (user as { role?: "ADMIN" | "USER" }).role ?? "USER";
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        session.user.role = token.role as "ADMIN" | "USER";
+        session.user.role = token.role as typeof session.user.role;
       }
       return session;
     },

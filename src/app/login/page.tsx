@@ -27,7 +27,7 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.assign("/admin");
+      window.location.assign("/dashboard");
     });
   }
 
@@ -41,13 +41,15 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
       >
         <BrandLogo href="/" size="md" />
-        <h1 className="mt-4 text-xl font-semibold">Admin Login</h1>
+        <h1 className="mt-4 text-xl font-semibold">Sign in</h1>
+        <p className="mt-1 text-sm text-muted">Use the account provided by the institute.</p>
         <label className="mt-6 block text-sm">
           <span className="mb-1.5 block font-medium">Email</span>
           <input
             name="email"
             type="email"
             required
+            autoComplete="email"
             className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3 outline-none focus:ring-2 focus:ring-gold/50"
           />
         </label>
@@ -57,6 +59,7 @@ export default function LoginPage() {
             name="password"
             type="password"
             required
+            autoComplete="current-password"
             className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3 outline-none focus:ring-2 focus:ring-gold/50"
           />
         </label>

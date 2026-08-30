@@ -32,6 +32,23 @@ export default async function AdminSettingsPage() {
         ))}
         <Button type="submit">Save settings</Button>
       </form>
+
+      <section className="mt-10 rounded-2xl border border-foreground/10 bg-card p-5">
+        <h2 className="font-semibold">Class timezone</h2>
+        <p className="mt-1 text-sm text-muted">
+          Admin and teachers schedule and see classes in Pakistan (Asia/Karachi). Students see the same
+          moment in their country timezone.
+        </p>
+      </section>
+
+      <section className="mt-10 rounded-2xl border border-foreground/10 bg-card p-5">
+        <h2 className="font-semibold">Google Meet hosts</h2>
+        <p className="mt-1 text-sm text-muted">
+          Each teacher connects their own Google account on their Account page. Class meetings are
+          created on that teacher’s calendar so they are the host and can start the room without
+          being admitted.
+        </p>
+      </section>
     </div>
   );
 }

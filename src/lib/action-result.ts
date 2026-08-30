@@ -10,13 +10,16 @@ export function toActionError(error: unknown, fallback = "Something went wrong. 
       return "Database is out of date. Restart the server after running: npx prisma generate";
     }
     if (msg.includes("Unique constraint") || msg.includes("Unique constraint failed")) {
-      return "That slug or code is already in use. Choose a different one.";
+      return "That email, slug, or code is already in use. Choose a different one.";
     }
     if (msg.includes("Unauthorized")) {
-      return "You must be logged in as an admin to do this.";
+      return "You must be signed in with the right role to do this.";
     }
-    if (msg.includes("Cloudinary")) {
+    if (msg.includes("Cloudinary") || msg.includes("Google Calendar") || msg.includes("Meet permission")) {
       return msg;
+    }
+    if (msg.toLowerCase().includes("insufficient authentication scopes")) {
+      return "Google Calendar is missing Meet permission. Open Settings, click Reconnect Google, and accept Calendar access.";
     }
     // Avoid dumping huge Prisma dumps to the UI
     if (msg.includes("Invalid `") || msg.includes("prisma.")) {

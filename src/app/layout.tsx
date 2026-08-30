@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+import Script from "next/script";
+import { cookies } from "next/headers";
 import { Montserrat, Source_Sans_3 } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { THEME_COOKIE } from "@/lib/constants";
+import { isStoredTheme, themeClassFromCookie, type StoredTheme } from "@/lib/theme-script";
+import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const display = Montserrat({
@@ -65,7 +70,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const jar = await cookies();
+  const stored = jar.get(THEME_COOKIE)?.value;
+  const initialTheme: StoredTheme = isStoredTheme(stored) ? stored : "system";
+  const themeClass = themeClassFromCookie(stored);
+
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
@@ -76,13 +86,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable} h-full`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn(display.variable, body.variable, "h-full", themeClass)}
+    >
       <body className="min-h-full flex flex-col antialiased">
-        <script
+        <Script
+          id="org-jsonld"
           type="application/ld+json"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
         />
-        <Providers>{children}</Providers>
+        <Providers initialTheme={initialTheme}>{children}</Providers>
       </body>
     </html>
   );

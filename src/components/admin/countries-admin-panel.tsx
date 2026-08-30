@@ -15,6 +15,7 @@ export type AdminCountry = {
   currencyCode: string;
   currencySymbol: string;
   flagEmoji: string;
+  timezone: string;
   sortOrder: number;
   active: boolean;
 };
@@ -85,7 +86,7 @@ export function CountriesAdminPanel({ countries }: { countries: AdminCountry[] }
                   {c.flagEmoji} {c.name}
                 </p>
                 <p className="text-xs text-muted">
-                  {c.code} · {c.currencyCode} ({c.currencySymbol})
+                  {c.code} · {c.currencyCode} ({c.currencySymbol}) · {c.timezone}
                 </p>
               </div>
               <span className={`text-xs ${c.active ? "text-teal dark:text-gold" : "text-muted"}`}>
@@ -129,6 +130,15 @@ export function CountriesAdminPanel({ countries }: { countries: AdminCountry[] }
             </label>
           </div>
           <label className="block text-sm">
+            <span className="mb-1 block font-medium">Timezone (IANA)</span>
+            <input
+              name="timezone"
+              defaultValue="Asia/Karachi"
+              placeholder="Asia/Karachi"
+              className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3"
+            />
+          </label>
+          <label className="block text-sm">
             <span className="mb-1 block font-medium">Sort order</span>
             <input name="sortOrder" type="number" defaultValue={99} className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3" />
           </label>
@@ -159,6 +169,10 @@ export function CountriesAdminPanel({ countries }: { countries: AdminCountry[] }
             <label className="block text-sm">
               <span className="mb-1 block font-medium">Symbol</span>
               <input name="currencySymbol" defaultValue={open.currencySymbol} className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3" />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium">Timezone (IANA)</span>
+              <input name="timezone" defaultValue={open.timezone} className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3" />
             </label>
             <label className="block text-sm">
               <span className="mb-1 block font-medium">Sort order</span>

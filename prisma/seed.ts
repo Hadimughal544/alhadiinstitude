@@ -3,6 +3,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
+import { COUNTRY_TIMEZONES, DEFAULT_TIMEZONE } from "../src/lib/country-timezones";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -77,10 +78,14 @@ async function main() {
   console.log("Seeding Al-Hadi Institute...");
 
   for (const c of countries) {
+    const row = {
+      ...c,
+      timezone: COUNTRY_TIMEZONES[c.code] || DEFAULT_TIMEZONE,
+    };
     await prisma.country.upsert({
       where: { code: c.code },
-      update: c,
-      create: c,
+      update: row,
+      create: row,
     });
   }
 
@@ -328,6 +333,7 @@ async function main() {
       "https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&w=2000&q=80",
     homeHeroImage:
       "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=2000&q=80",
+    instituteTimezone: DEFAULT_TIMEZONE,
   };
 
   for (const [key, value] of Object.entries(settings)) {
@@ -337,6 +343,8 @@ async function main() {
       create: { key, value },
     });
   }
+
+  await prisma.lecture.updateMany({ data: { timezone: DEFAULT_TIMEZONE } });
 
   const email = process.env.ADMIN_EMAIL || "admin@alhadiinstitute.com";
   const password = process.env.ADMIN_PASSWORD || "change-me";

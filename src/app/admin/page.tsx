@@ -31,6 +31,9 @@ export default async function AdminDashboard() {
     byStatusGroup,
     recentInquiries,
     trendRaw,
+    teacherCount,
+    studentCount,
+    lectureCount,
   ] = await Promise.all([
     prisma.inquiry.count({ where: { status: "NEW" } }),
     prisma.inquiry.count(),
@@ -49,6 +52,9 @@ export default async function AdminDashboard() {
       select: { createdAt: true },
       orderBy: { createdAt: "asc" },
     }),
+    prisma.teacherProfile.count({ where: { user: { active: true } } }),
+    prisma.studentProfile.count({ where: { user: { active: true } } }),
+    prisma.lecture.count({ where: { active: true } }),
   ]);
 
   const trendMap = new Map<string, number>();
@@ -186,9 +192,21 @@ export default async function AdminDashboard() {
               <span className="text-muted">Services</span>
               <span className="font-semibold">{services}</span>
             </li>
-            <li className="flex justify-between">
+            <li className="flex justify-between border-b border-foreground/5 pb-3">
               <span className="text-muted">Pricing plans</span>
               <span className="font-semibold">{plans}</span>
+            </li>
+            <li className="flex justify-between border-b border-foreground/5 pb-3">
+              <span className="text-muted">Teachers</span>
+              <span className="font-semibold">{teacherCount}</span>
+            </li>
+            <li className="flex justify-between border-b border-foreground/5 pb-3">
+              <span className="text-muted">Students</span>
+              <span className="font-semibold">{studentCount}</span>
+            </li>
+            <li className="flex justify-between">
+              <span className="text-muted">Lectures</span>
+              <span className="font-semibold">{lectureCount}</span>
             </li>
           </ul>
         </div>

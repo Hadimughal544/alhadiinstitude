@@ -15,6 +15,7 @@ export default async function AdminCountriesPage() {
         currencyCode: c.currencyCode,
         currencySymbol: c.currencySymbol,
         flagEmoji: c.flagEmoji,
+        timezone: c.timezone,
         sortOrder: c.sortOrder,
         active: c.active,
       }))}

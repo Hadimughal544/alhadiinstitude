@@ -14,7 +14,11 @@ export function getPoolConfig(): PoolConfig {
 
   return {
     connectionString,
-    max: 10,
+    max: 5,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 15_000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10_000,
     ...(needsSsl && {
       ssl: { rejectUnauthorized: false },
     }),

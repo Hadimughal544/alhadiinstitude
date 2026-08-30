@@ -10,6 +10,8 @@ datasource db {
 enum Role {
   ADMIN
   USER
+  TEACHER
+  STUDENT
 }
 
 enum InquiryType {
@@ -33,11 +35,16 @@ model User {
   password      String?
   role          Role      @default(USER)
   image         String?
+  phone         String?
+  active        Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
+  accounts          Account[]
+  sessions          Session[]
+  teacher           TeacherProfile?
+  student           StudentProfile?
+  googleConnection  GoogleConnection?
 }
 
 model Account {
@@ -82,10 +89,13 @@ model Country {
   currencyCode   String
   currencySymbol String
   flagEmoji      String
+  timezone       String   @default("Asia/Karachi")
   sortOrder      Int      @default(0)
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  students StudentProfile[]
 }
 
 model Service {
@@ -102,7 +112,8 @@ model Service {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  plans Plan[]
+  plans    Plan[]
+  lectures Lecture[]
 }
 
 model Plan {
@@ -159,6 +170,69 @@ model SiteSetting {
   key       String   @unique
   value     String   @db.Text
   updatedAt DateTime @updatedAt
+}
+
+model TeacherProfile {
+  id             String  @id @default(cuid())
+  userId         String  @unique
+  specialization String?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lectures Lecture[]
+}
+
+model StudentProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  ageGroup    String?
+  countryCode String?
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country     Country?             @relation(fields: [countryCode], references: [code], onDelete: SetNull)
+  enrollments LectureEnrollment[]
+}
+
+model Lecture {
+  id            String   @id @default(cuid())
+  title         String
+  dayOfWeek     Int
+  startTime     String
+  endTime       String
+  timezone      String   @default("Asia/Karachi")
+  teacherId     String
+  serviceId     String?
+  meetUrl       String?
+  googleEventId String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  teacher     TeacherProfile      @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  service     Service?            @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  enrollments LectureEnrollment[]
+
+  @@index([teacherId, dayOfWeek])
+  @@index([dayOfWeek, active])
+}
+
+model LectureEnrollment {
+  lectureId String
+  studentId String
+
+  lecture Lecture        @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  student StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([lectureId, studentId])
+}
+
+model GoogleConnection {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  email        String
+  refreshToken String   @db.Text
+  connectedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum PostStatus {
