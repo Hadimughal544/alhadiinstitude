@@ -3,25 +3,78 @@ import { compareLectureTime, joinWindow, lectureSourceSlot, timeToMinutes, type 
 
 const SERVICE_HUES = [168, 200, 220, 260, 300, 340, 25, 45];
 
-export function serviceAccent(serviceId: string | null): {
-  style?: React.CSSProperties;
-  className: string;
-} {
-  if (!serviceId) {
-    return { className: "border-border bg-card" };
-  }
+/** Stable hue for a service, so the same course always reads the same colour. */
+export function serviceHue(serviceId: string | null): number | null {
+  if (!serviceId) return null;
   let hash = 0;
   for (let i = 0; i < serviceId.length; i += 1) {
     hash = serviceId.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hue = SERVICE_HUES[Math.abs(hash) % SERVICE_HUES.length];
+  return SERVICE_HUES[Math.abs(hash) % SERVICE_HUES.length];
+}
+
+/**
+ * Accent for a lecture card. Colours are mixed into the current theme's card
+ * and border tokens, so they stay legible in both light and dark mode.
+ */
+export function serviceAccent(serviceId: string | null): {
+  style?: React.CSSProperties;
+  className: string;
+} {
+  const hue = serviceHue(serviceId);
+  if (hue === null) {
+    return { className: "border-border bg-card border-l-[3px]" };
+  }
+  const base = `hsl(${hue} 55% 45%)`;
   return {
-    className: "border-transparent",
+    className: "border-l-[3px]",
     style: {
-      backgroundColor: `hsl(${hue} 35% 92%)`,
-      borderColor: `hsl(${hue} 40% 75%)`,
+      backgroundColor: `color-mix(in oklab, ${base} 7%, var(--card))`,
+      borderColor: `color-mix(in oklab, ${base} 28%, var(--border))`,
+      borderLeftColor: base,
     },
   };
+}
+
+/**
+ * Lays overlapping lectures of a single day side by side instead of stacking
+ * them on top of each other. Returns the column index / count for each lecture.
+ */
+export function layoutDayLectures(lectures: TimetableLecture[]) {
+  const sorted = [...lectures].sort(
+    (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
+  );
+  const placed: { lecture: TimetableLecture; column: number; columns: number }[] = [];
+  let cluster: typeof placed = [];
+  let clusterEnd = -1;
+
+  const flush = () => {
+    const columns = cluster.reduce((max, item) => Math.max(max, item.column + 1), 1);
+    for (const item of cluster) item.columns = columns;
+    cluster = [];
+  };
+
+  for (const lecture of sorted) {
+    const start = timeToMinutes(lecture.startTime);
+    const end = timeToMinutes(lecture.endTime);
+    if (cluster.length > 0 && start >= clusterEnd) flush();
+
+    const taken = new Set(
+      cluster
+        .filter((item) => timeToMinutes(item.lecture.endTime) > start)
+        .map((item) => item.column)
+    );
+    let column = 0;
+    while (taken.has(column)) column += 1;
+
+    const item = { lecture, column, columns: 1 };
+    cluster.push(item);
+    placed.push(item);
+    clusterEnd = Math.max(clusterEnd, end);
+  }
+  flush();
+
+  return placed;
 }
 
 export function buildTimeSlots(lectures: TimetableLecture[], stepMinutes = 60) {
@@ -45,11 +98,16 @@ export function buildTimeSlots(lectures: TimetableLecture[], stepMinutes = 60) {
   return { slots, startMin, endMin, stepMinutes };
 }
 
+/**
+ * Position of a lecture on the hour grid, in (fractional) rows. The span follows
+ * the real duration — a 30 minute class must not occupy a whole hour, or it would
+ * bleed into the block below it.
+ */
 export function lectureGridSpan(lecture: TimetableLecture, startMin: number, stepMinutes: number) {
   const lectureStart = timeToMinutes(lecture.startTime);
   const lectureEnd = timeToMinutes(lecture.endTime);
   const rowStart = Math.max(0, (lectureStart - startMin) / stepMinutes);
-  const rowSpan = Math.max(1, (lectureEnd - lectureStart) / stepMinutes);
+  const rowSpan = Math.max(0.25, (lectureEnd - lectureStart) / stepMinutes);
   return { rowStart, rowSpan };
 }
 

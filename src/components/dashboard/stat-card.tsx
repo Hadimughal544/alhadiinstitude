@@ -22,21 +22,25 @@ export function StatCard({
   className?: string;
 }) {
   const content = (
-    <Card className={cn("transition-colors hover:border-teal/30 dark:hover:border-gold/30", href && "group", className)}>
-      <CardContent className="p-5">
+    <Card className={cn("h-full transition-colors hover:border-teal/30 dark:hover:border-gold/30", href && "group", className)}>
+      <CardContent className="flex h-full flex-col p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-2">
             <p className="text-sm font-medium text-muted">{label}</p>
             <p className="font-display text-3xl font-semibold tracking-tight">{value}</p>
-            {hint && <p className="text-xs text-muted">{hint}</p>}
-            {trend && (
-              <p
-                className={cn(
-                  "text-xs font-medium",
-                  trend.positive ? "text-success" : "text-muted"
+            {(hint || trend) && (
+              <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
+                {hint && <span>{hint}</span>}
+                {trend && (
+                  <span
+                    className={cn(
+                      "font-medium",
+                      trend.positive ? "text-success" : "text-muted"
+                    )}
+                  >
+                    {trend.value}
+                  </span>
                 )}
-              >
-                {trend.value}
               </p>
             )}
           </div>
@@ -47,7 +51,7 @@ export function StatCard({
           )}
         </div>
         {href && (
-          <div className="mt-3 flex items-center gap-1 text-xs font-medium text-teal opacity-0 transition group-hover:opacity-100 dark:text-gold">
+          <div className="mt-auto pt-3 flex items-center gap-1 text-xs font-medium text-teal opacity-0 transition group-hover:opacity-100 dark:text-gold">
             View details <ArrowUpRight className="h-3 w-3" />
           </div>
         )}
@@ -56,7 +60,7 @@ export function StatCard({
   );
 
   if (href) {
-    return <Link href={href} className="block">{content}</Link>;
+    return <Link href={href} className="block h-full">{content}</Link>;
   }
   return content;
 }

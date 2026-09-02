@@ -91,7 +91,13 @@ export function TimetableAdminPanel({
       )}
 
       <div className="mt-6">
-        <WeekGrid lectures={lectures} onSelect={(lecture) => setOpen(lecture)} />
+        <WeekGrid
+          lectures={lectures}
+          onSelect={(lecture) => setOpen(lecture)}
+          showJoin
+          joinRole="admin"
+          showStudents
+        />
       </div>
 
       <AdminModal

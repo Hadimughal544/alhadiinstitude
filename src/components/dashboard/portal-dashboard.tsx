@@ -152,5 +152,5 @@ export function PortalQuickActions({ perspective }: { perspective: "teacher" | "
           { label: "Account", href: "/student/account", icon: UserRound, description: "Profile & settings" },
         ];
 
-  return <QuickActions actions={actions} />;
+  return <QuickActions actions={actions} size="lg" />;
 }

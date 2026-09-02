@@ -34,10 +34,10 @@ export default async function AdminInquiriesPage() {
           <thead className="border-b border-border bg-accent/30 text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Contact</th>
-              <th className="px-4 py-3 font-medium">Service</th>
-              <th className="px-4 py-3 font-medium">Type</th>
+              <th className="px-4 py-3 text-center font-medium">Service</th>
+              <th className="px-4 py-3 text-center font-medium">Type</th>
               <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Date</th>
+              <th className="px-4 py-3 text-center font-medium">Date</th>
             </tr>
           </thead>
           <tbody>
@@ -48,11 +48,11 @@ export default async function AdminInquiriesPage() {
                   <p className="text-xs text-muted">{inq.email}</p>
                   <p className="text-xs text-muted">{inq.phone}</p>
                 </td>
-                <td className="px-4 py-3 capitalize">
+                <td className="px-4 py-3 text-center align-middle capitalize">
                   {inq.serviceSlug}
                   {inq.plan && <p className="text-xs text-muted">{inq.plan.name}</p>}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 text-center align-middle">
                   <Badge variant="outline">{inq.type}</Badge>
                 </td>
                 <td className="px-4 py-3">
@@ -76,7 +76,7 @@ export default async function AdminInquiriesPage() {
                     </button>
                   </form>
                 </td>
-                <td className="px-4 py-3 text-xs text-muted">
+                <td className="px-4 py-3 text-center align-middle text-xs text-muted">
                   {inq.createdAt.toLocaleString()}
                 </td>
               </tr>

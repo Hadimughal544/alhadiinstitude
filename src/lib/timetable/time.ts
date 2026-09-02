@@ -223,7 +223,7 @@ export function compareLectureTime(a: { startTime: string }, b: { startTime: str
 }
 
 /** Minutes before class start that the Join button appears (for everyone). */
-export const JOIN_MINUTES_BEFORE = 10;
+export const JOIN_MINUTES_BEFORE = 5;
 
 /**
  * When false, the Join button shows any time before the class ends (the Meet room
@@ -231,7 +231,7 @@ export const JOIN_MINUTES_BEFORE = 10;
  */
 export const JOIN_REQUIRE_WINDOW = process.env.JOIN_REQUIRE_WINDOW !== "false";
 
-export type JoinRole = "teacher" | "student";
+export type JoinRole = "teacher" | "student" | "admin";
 export type JoinWindowState = "waiting" | "open" | "ended";
 
 export function minutesToTime(totalMinutes: number) {

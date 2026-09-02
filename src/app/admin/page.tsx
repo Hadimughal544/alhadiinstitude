@@ -7,6 +7,7 @@ import {
   Users,
 } from "lucide-react";
 import { DashboardCharts } from "@/components/admin/dashboard-charts";
+import { JoinClassButton } from "@/components/timetable/join-class-button";
 import { GoogleConnectBanner } from "@/components/admin/google-connect-banner";
 import { DataListRow } from "@/components/dashboard/data-list-row";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -183,7 +184,15 @@ export default async function AdminDashboard() {
                       {formatTimeRange(lecture.startTime, lecture.endTime)} · {lecture.teacherName}
                     </p>
                   </div>
-                  <Badge variant="outline">{lecture.studentNames.length} students</Badge>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Badge variant="outline">{lecture.studentNames.length} students</Badge>
+                    <JoinClassButton
+                      meetUrl={lecture.meetUrl}
+                      lecture={lecture}
+                      role="admin"
+                      compact
+                    />
+                  </div>
                 </div>
               ))
             )}
