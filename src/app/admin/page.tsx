@@ -1,13 +1,25 @@
 import Link from "next/link";
 import {
-  MessageSquare,
+  CalendarDays,
+  GraduationCap,
   Layers,
-  CreditCard,
-  Plus,
-  ArrowUpRight,
+  MessageSquare,
+  Users,
 } from "lucide-react";
 import { DashboardCharts } from "@/components/admin/dashboard-charts";
+import { JoinClassButton } from "@/components/timetable/join-class-button";
+import { GoogleConnectBanner } from "@/components/admin/google-connect-banner";
+import { DataListRow } from "@/components/dashboard/data-list-row";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { QuickActions } from "@/components/dashboard/quick-actions";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { DEFAULT_TIMEZONE } from "@/lib/country-timezones";
+import { isInstituteGoogleConnected } from "@/lib/meet";
 import { prisma } from "@/lib/prisma";
+import { getAllLectures, todaysLectures } from "@/lib/timetable/queries";
+import { formatTimeRange } from "@/lib/timetable/time";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +27,12 @@ function startOfDay(d: Date) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
+}
+
+function inquiryBadge(status: string) {
+  if (status === "NEW") return "info" as const;
+  if (status === "CONTACTED") return "warning" as const;
+  return "outline" as const;
 }
 
 export default async function AdminDashboard() {
@@ -31,6 +49,11 @@ export default async function AdminDashboard() {
     byStatusGroup,
     recentInquiries,
     trendRaw,
+    teacherCount,
+    studentCount,
+    lectureCount,
+    googleConnected,
+    allLectures,
   ] = await Promise.all([
     prisma.inquiry.count({ where: { status: "NEW" } }),
     prisma.inquiry.count(),
@@ -49,7 +72,14 @@ export default async function AdminDashboard() {
       select: { createdAt: true },
       orderBy: { createdAt: "asc" },
     }),
+    prisma.teacherProfile.count({ where: { user: { active: true } } }),
+    prisma.studentProfile.count({ where: { user: { active: true } } }),
+    prisma.lecture.count({ where: { active: true } }),
+    isInstituteGoogleConnected(),
+    getAllLectures(),
   ]);
+
+  const todaySchedule = todaysLectures(allLectures, DEFAULT_TIMEZONE);
 
   const trendMap = new Map<string, number>();
   for (let i = 0; i < 14; i++) {
@@ -65,6 +95,12 @@ export default async function AdminDashboard() {
     trendMap.set(key, (trendMap.get(key) ?? 0) + 1);
   }
   const trend = Array.from(trendMap.entries()).map(([date, count]) => ({ date, count }));
+  const firstWeek = trend.slice(0, 7).reduce((s, r) => s + r.count, 0);
+  const secondWeek = trend.slice(7).reduce((s, r) => s + r.count, 0);
+  const inquiryTrend =
+    firstWeek > 0
+      ? `${secondWeek >= firstWeek ? "+" : ""}${Math.round(((secondWeek - firstWeek) / firstWeek) * 100)}% vs prior week`
+      : undefined;
 
   const byServiceChart = byService.map((r) => ({
     name: r.serviceSlug.charAt(0).toUpperCase() + r.serviceSlug.slice(1),
@@ -80,117 +116,140 @@ export default async function AdminDashboard() {
     value: statusCounts[name] ?? 0,
   }));
 
-  const cards = [
-    { label: "New inquiries", value: newInquiries, href: "/admin/inquiries", icon: MessageSquare, tone: "bg-teal/10 text-teal dark:bg-gold/15 dark:text-gold" },
-    { label: "Total inquiries", value: totalInquiries, href: "/admin/inquiries", icon: MessageSquare, tone: "bg-gold/15 text-ink dark:text-gold" },
-    { label: "Services", value: services, href: "/admin/services", icon: Layers, tone: "bg-teal/10 text-teal" },
-    { label: "Plans", value: plans, href: "/admin/plans", icon: CreditCard, tone: "bg-foreground/5 text-foreground" },
-  ];
-
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl sm:text-4xl">Dashboard</h1>
-          <p className="mt-1 text-muted">
-            Analytics and quick actions for Al-Hadi Institute.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <PageHeader
+        title="Dashboard"
+        description="Overview of your institution — people, schedule, and inquiries."
+        action={
           <Link
-            href="/admin/services/new"
-            className="inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-cream dark:bg-gold dark:text-ink"
+            href="/admin/inquiries"
+            className="inline-flex h-8 items-center gap-2 rounded-full border border-border px-4 text-sm font-medium hover:bg-accent"
           >
-            <Plus className="h-4 w-4" /> Service
+            <MessageSquare className="h-4 w-4" />
+            Inquiries
           </Link>
-          <Link
-            href="/admin/plans/new"
-            className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-card px-4 py-2 text-sm font-medium"
-          >
-            <Plus className="h-4 w-4" /> Plan
-          </Link>
-          <Link
-            href="/admin/countries/new"
-            className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-card px-4 py-2 text-sm font-medium"
-          >
-            <Plus className="h-4 w-4" /> Country
-          </Link>
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((c) => {
-          const Icon = c.icon;
-          return (
-            <Link
-              key={c.label}
-              href={c.href}
-              className="group rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between">
-                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${c.tone}`}>
-                  <Icon className="h-5 w-5" />
-                </span>
-                <ArrowUpRight className="h-4 w-4 text-muted opacity-0 transition group-hover:opacity-100" />
-              </div>
-              <p className="mt-4 text-sm text-muted">{c.label}</p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight">{c.value}</p>
-            </Link>
-          );
-        })}
-      </div>
-
-      <DashboardCharts
-        byService={byServiceChart}
-        byStatus={byStatus}
-        trend={trend}
+        }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Recent inquiries</h2>
-            <Link href="/admin/inquiries" className="text-sm text-teal dark:text-gold">
-              View all
-            </Link>
-          </div>
-          <ul className="mt-4 divide-y divide-foreground/5">
-            {recentInquiries.length === 0 && (
-              <li className="py-6 text-center text-sm text-muted">No inquiries yet.</li>
-            )}
-            {recentInquiries.map((inq) => (
-              <li key={inq.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
-                <div>
-                  <p className="font-medium">{inq.name}</p>
-                  <p className="text-xs text-muted">
-                    {inq.serviceSlug}
-                    {inq.plan ? ` · ${inq.plan.name}` : ""} · {inq.type}
-                  </p>
-                </div>
-                <span className="rounded-full bg-foreground/5 px-2.5 py-1 text-xs font-medium">
-                  {inq.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {!googleConnected && <GoogleConnectBanner />}
 
-        <div className="rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm">
-          <h2 className="font-semibold">Catalog snapshot</h2>
-          <ul className="mt-4 space-y-3 text-sm">
-            <li className="flex justify-between border-b border-foreground/5 pb-3">
-              <span className="text-muted">Active countries</span>
-              <span className="font-semibold">{countries}</span>
-            </li>
-            <li className="flex justify-between border-b border-foreground/5 pb-3">
-              <span className="text-muted">Services</span>
-              <span className="font-semibold">{services}</span>
-            </li>
-            <li className="flex justify-between">
-              <span className="text-muted">Pricing plans</span>
-              <span className="font-semibold">{plans}</span>
-            </li>
-          </ul>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Students" value={studentCount} icon={GraduationCap} href="/admin/students" />
+        <StatCard label="Teachers" value={teacherCount} icon={Users} href="/admin/teachers" />
+        <StatCard label="Active classes" value={lectureCount} icon={CalendarDays} href="/admin/timetable" />
+        <StatCard
+          label="New inquiries"
+          value={newInquiries}
+          hint={`${totalInquiries} total`}
+          icon={MessageSquare}
+          href="/admin/inquiries"
+          trend={inquiryTrend ? { value: inquiryTrend, positive: secondWeek >= firstWeek } : undefined}
+        />
+      </div>
+
+      <div>
+        <h2 className="mb-3 font-display text-lg font-semibold">Quick actions</h2>
+        <QuickActions
+          actions={[
+            { label: "Add student", href: "/admin/students", icon: GraduationCap, description: "Enroll a learner" },
+            { label: "Add teacher", href: "/admin/teachers", icon: Users, description: "Onboard staff" },
+            { label: "Timetable", href: "/admin/timetable", icon: CalendarDays, description: "Schedule classes" },
+            { label: "New service", href: "/admin/services/new", icon: Layers, description: "Marketing catalog" },
+            { label: "Inquiries", href: "/admin/inquiries", icon: MessageSquare, description: "Review leads" },
+          ]}
+        />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Card className="xl:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Today&apos;s schedule</CardTitle>
+            <Link href="/admin/timetable" className="text-xs font-medium text-teal dark:text-gold">
+              Full timetable
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {todaySchedule.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted">No classes scheduled for today.</p>
+            ) : (
+              todaySchedule.map((lecture) => (
+                <div
+                  key={lecture.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium">{lecture.title}</p>
+                    <p className="text-xs text-muted">
+                      {formatTimeRange(lecture.startTime, lecture.endTime)} · {lecture.teacherName}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Badge variant="outline">{lecture.studentNames.length} students</Badge>
+                    <JoinClassButton
+                      meetUrl={lecture.meetUrl}
+                      lecture={lecture}
+                      role="admin"
+                      compact
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Catalog snapshot</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {[
+              { label: "Countries", value: countries, href: "/admin/countries" },
+              { label: "Services", value: services, href: "/admin/services" },
+              { label: "Plans", value: plans, href: "/admin/plans" },
+              { label: "Teachers", value: teacherCount, href: "/admin/teachers" },
+              { label: "Students", value: studentCount, href: "/admin/students" },
+            ].map((row) => (
+              <Link
+                key={row.label}
+                href={row.href}
+                className="flex items-center justify-between rounded-lg px-2 py-1.5 transition hover:bg-accent"
+              >
+                <span className="text-muted">{row.label}</span>
+                <span className="font-semibold">{row.value}</span>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <DashboardCharts byService={byServiceChart} byStatus={byStatus} trend={trend} />
+
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold">Recent inquiries</h2>
+          <Link href="/admin/inquiries" className="text-sm font-medium text-teal dark:text-gold">
+            View all
+          </Link>
+        </div>
+        <div className="space-y-2">
+          {recentInquiries.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border py-8 text-center text-sm text-muted">
+              No inquiries yet.
+            </p>
+          ) : (
+            recentInquiries.map((inq) => (
+              <DataListRow
+                key={inq.id}
+                name={inq.name}
+                subtitle={inq.email}
+                meta={`${inq.serviceSlug}${inq.plan ? ` · ${inq.plan.name}` : ""} · ${inq.type}`}
+                badge={inq.status}
+                badgeVariant={inquiryBadge(inq.status)}
+              />
+            ))
+          )}
         </div>
       </div>
     </div>

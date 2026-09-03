@@ -1,18 +1,28 @@
 "use client";
 
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { ThemeProvider, type ThemeName } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  initialTheme,
+}: {
+  children: React.ReactNode;
+  initialTheme?: ThemeName;
+}) {
   return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
+    <ThemeProvider initialTheme={initialTheme}>
       {children}
-      <Toaster richColors position="top-right" />
-    </NextThemesProvider>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          classNames: {
+            toast: "border border-border bg-card text-foreground shadow-[var(--shadow-card)]",
+            title: "font-medium",
+            description: "text-muted",
+          },
+        }}
+      />
+    </ThemeProvider>
   );
 }

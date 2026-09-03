@@ -1,0 +1,20 @@
+export type TimetableLecture = {
+  id: string;
+  title: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  timezone: string;
+  sourceDayOfWeek: number;
+  sourceStartTime: string;
+  sourceEndTime: string;
+  sourceTimezone: string;
+  meetUrl: string | null;
+  teacherName: string;
+  teacherId: string;
+  studentNames: string[];
+  studentIds: string[];
+  serviceId: string | null;
+  serviceTitle: string | null;
+  active: boolean;
+};

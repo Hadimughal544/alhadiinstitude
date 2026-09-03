@@ -10,13 +10,21 @@ export function toActionError(error: unknown, fallback = "Something went wrong. 
       return "Database is out of date. Restart the server after running: npx prisma generate";
     }
     if (msg.includes("Unique constraint") || msg.includes("Unique constraint failed")) {
-      return "That slug or code is already in use. Choose a different one.";
+      return "That email, slug, or code is already in use. Choose a different one.";
     }
     if (msg.includes("Unauthorized")) {
-      return "You must be logged in as an admin to do this.";
+      return "You must be signed in with the right role to do this.";
     }
-    if (msg.includes("Cloudinary")) {
+    if (
+      msg.includes("Cloudinary") ||
+      msg.includes("Google Meet") ||
+      msg.includes("Meet permission") ||
+      msg.includes("institute Google account")
+    ) {
       return msg;
+    }
+    if (msg.toLowerCase().includes("insufficient authentication scopes")) {
+      return "The institute Google account is missing Meet permission. Reconnect it in Admin → Settings → Google and accept Meet access.";
     }
     // Avoid dumping huge Prisma dumps to the UI
     if (msg.includes("Invalid `") || msg.includes("prisma.")) {

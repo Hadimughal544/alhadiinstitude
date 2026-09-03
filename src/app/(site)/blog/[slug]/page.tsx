@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import { notFound } from "next/navigation";
 import { Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -106,8 +107,10 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   return (
     <article className="mesh-bg">
-      <script
+      <Script
+        id={`blog-jsonld-${post.slug}`}
         type="application/ld+json"
+        strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 

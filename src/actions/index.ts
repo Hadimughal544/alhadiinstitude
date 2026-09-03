@@ -4,13 +4,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import {
-  COUNTRY_COOKIE,
-  CURRENCY_COOKIE,
-  COOKIE_MAX_AGE,
-} from "@/lib/constants";
+import { COUNTRY_COOKIE, CURRENCY_COOKIE, COOKIE_MAX_AGE } from "@/lib/constants";
+import { COUNTRY_TIMEZONES, DEFAULT_TIMEZONE } from "@/lib/country-timezones";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth-guards";
 import type { InquiryStatus, InquiryType, PostStatus } from "@/generated/prisma/client";
 import { GBP_FX, PLAN_CURRENCIES } from "@/lib/currencies";
 import { sanitizeBlogHtml } from "@/lib/blog";
@@ -96,14 +93,6 @@ export async function submitInquiryAction(formData: FormData) {
 
   revalidatePath("/admin/inquiries");
   return { ok: true as const };
-}
-
-async function requireAdmin() {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
-    throw new Error("Unauthorized");
-  }
-  return session;
 }
 
 export async function updateInquiryStatusAction(id: string, status: InquiryStatus) {
@@ -214,12 +203,20 @@ export async function updateCountryAction(formData: FormData): Promise<ActionRes
     const name = String(formData.get("name") || "");
     const currencySymbol = String(formData.get("currencySymbol") || "");
     const flagEmoji = String(formData.get("flagEmoji") || "");
+    const timezone = String(formData.get("timezone") || "").trim();
     const sortOrder = Number(formData.get("sortOrder") || 0);
     const active = formData.get("active") === "on" || formData.get("active") === "true";
 
     await prisma.country.update({
       where: { id },
-      data: { name, currencySymbol, flagEmoji, sortOrder, active },
+      data: {
+        name,
+        currencySymbol,
+        flagEmoji,
+        sortOrder,
+        active,
+        ...(timezone ? { timezone } : {}),
+      },
     });
     revalidatePath("/admin/countries");
     revalidatePath("/");
@@ -373,6 +370,10 @@ export async function createCountryAction(formData: FormData): Promise<ActionRes
       .toUpperCase();
     const currencySymbol = String(formData.get("currencySymbol") || "").trim();
     const flagEmoji = String(formData.get("flagEmoji") || "🏳️").trim();
+    const timezone =
+      String(formData.get("timezone") || "").trim() ||
+      COUNTRY_TIMEZONES[code] ||
+      DEFAULT_TIMEZONE;
     const sortOrder = Number(formData.get("sortOrder") || 99);
 
     if (!code || !name || !currencyCode || !currencySymbol) {
@@ -386,6 +387,7 @@ export async function createCountryAction(formData: FormData): Promise<ActionRes
         currencyCode,
         currencySymbol,
         flagEmoji,
+        timezone,
         sortOrder,
         active: true,
       },

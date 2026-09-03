@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-/* next-themes toggles a `.dark` class; without this the `dark:` variant would
-   follow the OS `prefers-color-scheme` instead of the in-app theme toggle. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -14,9 +12,29 @@
   --gold: #c4a35a;
   --gold-soft: #d4b76e;
   --muted: #5c6f72;
+  --muted-foreground: #5c6f72;
   --card: #ffffff;
+  --card-foreground: #0f2a2e;
   --panel: rgba(247, 244, 239, 0.88);
-  --border: rgba(15, 42, 46, 0.12);
+  --border: rgba(15, 42, 46, 0.1);
+  --accent: rgba(13, 79, 79, 0.08);
+  --accent-foreground: #0d4f4f;
+  --ring: rgba(196, 163, 90, 0.45);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f2a2e;
+  --success: #1a7a5e;
+  --success-muted: rgba(26, 122, 94, 0.12);
+  --warning: #b8860b;
+  --warning-muted: rgba(184, 134, 11, 0.12);
+  --destructive: #c0392b;
+  --destructive-muted: rgba(192, 57, 43, 0.1);
+  --info: #0d4f4f;
+  --info-muted: rgba(13, 79, 79, 0.1);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --shadow-sm: 0 1px 2px rgba(15, 42, 46, 0.05);
+  --shadow-card: 0 1px 3px rgba(15, 42, 46, 0.06), 0 4px 16px rgba(15, 42, 46, 0.04);
 }
 
 .dark {
@@ -28,10 +46,27 @@
   --teal-light: #35a8a8;
   --gold: #dfc078;
   --gold-soft: #ebcfa0;
-  --muted: #a8bdbf;
+  --muted: #8fa8ab;
+  --muted-foreground: #8fa8ab;
   --card: #0e2225;
+  --card-foreground: #f2f7f7;
   --panel: rgba(12, 32, 36, 0.92);
-  --border: rgba(223, 192, 120, 0.18);
+  --border: rgba(223, 192, 120, 0.14);
+  --accent: rgba(223, 192, 120, 0.1);
+  --accent-foreground: #dfc078;
+  --ring: rgba(223, 192, 120, 0.35);
+  --sidebar: #0a1c1f;
+  --sidebar-foreground: #f2f7f7;
+  --success: #3ecf9a;
+  --success-muted: rgba(62, 207, 154, 0.12);
+  --warning: #e8b84a;
+  --warning-muted: rgba(232, 184, 74, 0.12);
+  --destructive: #f07060;
+  --destructive-muted: rgba(240, 112, 96, 0.12);
+  --info: #2a9494;
+  --info-muted: rgba(42, 148, 148, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 @theme inline {
@@ -44,9 +79,29 @@
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
   --color-panel: var(--panel);
   --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-muted: var(--warning-muted);
+  --color-destructive: var(--destructive);
+  --color-destructive-muted: var(--destructive-muted);
+  --color-info: var(--info);
+  --color-info-muted: var(--info-muted);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-card: var(--shadow-card);
   --font-sans: var(--font-body);
   --font-display: var(--font-display);
 }
@@ -59,6 +114,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
@@ -105,7 +161,44 @@ body {
   mix-blend-mode: soft-light;
 }
 
-/* TipTap editor + public blog article body */
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-menu-in {
+  animation: menu-in 0.14s ease-out;
+  transform-origin: top right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-menu-in {
+    animation: none;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 25%,
+    color-mix(in oklab, var(--foreground) 12%, transparent) 50%,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
 .prose-blog {
   color: var(--foreground);
   font-size: 1.125rem;

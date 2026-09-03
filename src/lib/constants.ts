@@ -1,15 +1,20 @@
 export const COUNTRY_COOKIE = "ahi_country";
 export const CURRENCY_COOKIE = "ahi_currency";
+export const THEME_COOKIE = "ahi_theme";
 export const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 export const PUBLIC_PATHS_WITHOUT_COUNTRY = new Set([
   "/",
   "/login",
+  "/dashboard",
 ]);
 
 export function isExemptFromCountryGate(pathname: string) {
   if (PUBLIC_PATHS_WITHOUT_COUNTRY.has(pathname)) return true;
   if (pathname.startsWith("/admin")) return true;
+  if (pathname.startsWith("/teacher")) return true;
+  if (pathname.startsWith("/student")) return true;
+  if (pathname.startsWith("/dashboard")) return true;
   if (pathname.startsWith("/api")) return true;
   if (pathname.startsWith("/_next")) return true;
   // Static assets served from /public (images, fonts, icons, etc.)
