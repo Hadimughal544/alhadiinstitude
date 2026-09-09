@@ -16,6 +16,7 @@ const teacherSchema = z.object({
   email: z.string().trim().email("Enter a valid email."),
   phone: z.string().trim().optional().nullable(),
   specialization: z.string().trim().optional().nullable(),
+  countryCode: z.string().trim().min(1, "Country is required."),
   password: z.string().optional().nullable(),
 });
 
@@ -58,12 +59,14 @@ export async function createTeacherAction(formData: FormData): Promise<UserActio
       email: formData.get("email"),
       phone: formData.get("phone"),
       specialization: formData.get("specialization"),
+      countryCode: formData.get("countryCode"),
       password: formData.get("password"),
     });
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message || "Check the form fields." };
     }
 
+    const countryCode = await assertCountryExists(parsed.data.countryCode);
     const { password, generated } = resolvePassword(parsed.data.password);
     const user = await prisma.user.create({
       data: {
@@ -74,7 +77,10 @@ export async function createTeacherAction(formData: FormData): Promise<UserActio
         role: "TEACHER",
         active: true,
         teacher: {
-          create: { specialization: emptyToNull(parsed.data.specialization) },
+          create: {
+            specialization: emptyToNull(parsed.data.specialization),
+            countryCode,
+          },
         },
       },
     });
@@ -100,6 +106,7 @@ export async function updateTeacherAction(formData: FormData): Promise<UserActio
       email: formData.get("email"),
       phone: formData.get("phone"),
       specialization: formData.get("specialization"),
+      countryCode: formData.get("countryCode"),
     });
     if (!id || !parsed.success) {
       return { ok: false, error: parsed.success ? "Missing teacher id." : parsed.error.issues[0]?.message || "Check the form fields." };
@@ -110,6 +117,7 @@ export async function updateTeacherAction(formData: FormData): Promise<UserActio
     });
     if (!teacher) return { ok: false, error: "Teacher not found." };
 
+    const countryCode = await assertCountryExists(parsed.data.countryCode);
     await prisma.user.update({
       where: { id },
       data: {
@@ -117,7 +125,10 @@ export async function updateTeacherAction(formData: FormData): Promise<UserActio
         email: parsed.data.email.toLowerCase(),
         phone: emptyToNull(parsed.data.phone),
         teacher: {
-          update: { specialization: emptyToNull(parsed.data.specialization) },
+          update: {
+            specialization: emptyToNull(parsed.data.specialization),
+            countryCode,
+          },
         },
       },
     });

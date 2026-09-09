@@ -1,15 +1,9 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
-
-function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "https://alhadiinstitute.com").replace(
-    /\/$/,
-    ""
-  );
-}
+import { SITE_URL } from "@/lib/seo/config";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = siteUrl();
+  const base = SITE_URL;
   const now = new Date();
 
   const [services, posts] = await Promise.all([
@@ -32,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const serviceRoutes: MetadataRoute.Sitemap = services.map((s) => ({
-    url: `${base}/services/${s.slug}`,
+    url: `${base}/${s.slug}`,
     lastModified: s.updatedAt,
     changeFrequency: "weekly",
     priority: 0.85,

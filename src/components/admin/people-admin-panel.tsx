@@ -215,7 +215,7 @@ export function PeopleAdminPanel({
                 className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3"
               />
             </label>
-            {kind === "student" && (
+            {countries.length > 0 && (
               <label className="block text-sm">
                 <span className="mb-1.5 block font-medium">Country</span>
                 <select

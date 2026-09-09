@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { JsonLd, breadcrumbList } from "@/lib/seo/jsonld";
+import { SITE_URL } from "@/lib/seo/config";
 
 export const dynamic = "force-dynamic";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-  "https://alhadiinstitute.com";
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -49,6 +49,12 @@ export default async function BlogIndexPage() {
 
   return (
     <div className="mesh-bg">
+      <JsonLd
+        data={breadcrumbList([
+          { name: "Home", url: `${siteUrl}/` },
+          { name: "Blog", url: `${siteUrl}/blog` },
+        ])}
+      />
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
         <header className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-teal dark:text-gold">

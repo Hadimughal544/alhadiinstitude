@@ -97,7 +97,7 @@ export function ServiceGateway({
           return (
             <Link
               key={service.slug}
-              href={`/services/${service.slug}`}
+              href={`/${service.slug}`}
               className={cn(
                 "group relative flex min-h-[33.33dvh] items-center justify-center overflow-hidden md:min-h-dvh",
                 "border-b border-white/10 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"

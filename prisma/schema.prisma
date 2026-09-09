@@ -96,6 +96,7 @@ model Country {
   updatedAt      DateTime @updatedAt
 
   students StudentProfile[]
+  teachers TeacherProfile[]
 }
 
 model Service {
@@ -176,8 +177,10 @@ model TeacherProfile {
   id             String  @id @default(cuid())
   userId         String  @unique
   specialization String?
+  countryCode    String?
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country  Country?  @relation(fields: [countryCode], references: [code], onDelete: SetNull)
   lectures Lecture[]
 }
 

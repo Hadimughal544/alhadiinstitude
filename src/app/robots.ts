@@ -1,20 +1,22 @@
 import type { MetadataRoute } from "next";
-
-function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "https://alhadiinstitute.com").replace(
-    /\/$/,
-    ""
-  );
-}
+import { SITE_URL } from "@/lib/seo/config";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = siteUrl();
+  const base = SITE_URL;
   return {
     rules: [
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/admin/", "/teacher", "/student", "/dashboard", "/login"],
+        disallow: [
+          "/admin",
+          "/admin/",
+          "/teacher",
+          "/student",
+          "/dashboard",
+          "/login",
+          "/api",
+        ],
       },
     ],
     sitemap: `${base}/sitemap.xml`,

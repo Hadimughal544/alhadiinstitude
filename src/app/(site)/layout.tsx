@@ -1,12 +1,15 @@
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
-import { getRegionContext, getSettingsMap } from "@/lib/region";
+import { getRegionContextOrDefault, getSettingsMap } from "@/lib/region";
 
 export const dynamic = "force-dynamic";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [region, settings] = await Promise.all([getRegionContext(), getSettingsMap()]);
+  const [region, settings] = await Promise.all([
+    getRegionContextOrDefault(),
+    getSettingsMap(),
+  ]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">

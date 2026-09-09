@@ -33,6 +33,40 @@ export async function getRegionContext(): Promise<RegionContext | null> {
   };
 }
 
+/**
+ * Region context that always resolves, falling back to the first active country
+ * when the visitor has no country cookie yet (crawlers, first-time visitors).
+ * Public marketing pages use this so they render full HTML for everyone; the
+ * on-page country picker still lets humans switch.
+ */
+export async function getRegionContextOrDefault(): Promise<RegionContext> {
+  const fromCookie = await getRegionContext();
+  if (fromCookie) return fromCookie;
+
+  const fallback =
+    (await prisma.country.findFirst({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+    })) ??
+    (await prisma.country.findFirst({ orderBy: { sortOrder: "asc" } }));
+
+  if (!fallback) {
+    return {
+      countryCode: "PK",
+      currencyCode: "PKR",
+      currencySymbol: "Rs",
+      countryName: "Pakistan",
+    };
+  }
+
+  return {
+    countryCode: fallback.code,
+    currencyCode: fallback.currencyCode,
+    currencySymbol: fallback.currencySymbol,
+    countryName: fallback.name,
+  };
+}
+
 export async function getActiveCountries() {
   return prisma.country.findMany({
     where: { active: true },

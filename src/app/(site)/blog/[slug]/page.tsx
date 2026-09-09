@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import Script from "next/script";
 import { notFound } from "next/navigation";
 import { Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { JsonLd, breadcrumbList } from "@/lib/seo/jsonld";
+import { SITE_URL, SITE_NAME } from "@/lib/seo/config";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +13,7 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-  "https://alhadiinstitute.com";
+const siteUrl = SITE_URL;
 
 function formatDate(date: Date | null) {
   if (!date) return null;
@@ -95,11 +94,11 @@ export default async function BlogPostPage({ params }: PageProps) {
     dateModified: post.updatedAt.toISOString(),
     author: {
       "@type": "Organization",
-      name: "Al-Hadi Institute",
+      name: SITE_NAME,
     },
     publisher: {
       "@type": "Organization",
-      name: "Al-Hadi Institute",
+      name: SITE_NAME,
       url: siteUrl,
     },
     mainEntityOfPage: `${siteUrl}/blog/${post.slug}`,
@@ -107,11 +106,15 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   return (
     <article className="mesh-bg">
-      <Script
-        id={`blog-jsonld-${post.slug}`}
-        type="application/ld+json"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      <JsonLd
+        data={[
+          jsonLd,
+          breadcrumbList([
+            { name: "Home", url: `${siteUrl}/` },
+            { name: "Blog", url: `${siteUrl}/blog` },
+            { name: post.title, url: `${siteUrl}/blog/${post.slug}` },
+          ]),
+        ]}
       />
 
       <div className="mx-auto max-w-3xl px-4 pb-20 pt-10 sm:px-6 sm:pt-16">

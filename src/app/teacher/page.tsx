@@ -7,24 +7,21 @@ import {
 } from "@/components/dashboard/portal-dashboard";
 import { pickNextLecture } from "@/lib/timetable/display";
 import { requireTeacher } from "@/lib/auth-guards";
-import { getInstituteTimezone, getLecturesForTeacher, todaysLectures } from "@/lib/timetable/queries";
-import { timesInPakistanLabel } from "@/lib/timetable/time";
+import { getTeacherSchedule, todaysLectures } from "@/lib/timetable/queries";
+import { timesInZoneLabel } from "@/lib/timetable/time";
 
 export const dynamic = "force-dynamic";
 
 export default async function TeacherDashboardPage() {
   const session = await requireTeacher();
-  const [lectures, timezone] = await Promise.all([
-    getLecturesForTeacher(session.user.id),
-    getInstituteTimezone(),
-  ]);
+  const { timezone, lectures } = await getTeacherSchedule(session.user.id);
   const today = todaysLectures(lectures, timezone);
   const nextLecture = pickNextLecture(today, "teacher");
   const name = session.user.name || "Teacher";
 
   return (
     <div className="space-y-8">
-      <DashboardGreeting name={name} subtitle={timesInPakistanLabel()} />
+      <DashboardGreeting name={name} subtitle={timesInZoneLabel(timezone)} />
       <NextClassHero lecture={nextLecture} role="teacher" perspective="teacher" />
       <div className="grid gap-8 lg:grid-cols-3">
         <section className="lg:col-span-2 space-y-4">

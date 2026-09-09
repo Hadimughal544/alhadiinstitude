@@ -1,9 +1,10 @@
 import { PlanCards } from "@/components/plan-cards";
 import { FadeIn } from "@/components/motion";
 import { prisma } from "@/lib/prisma";
-import { getRegionContext } from "@/lib/region";
-import { redirect } from "next/navigation";
+import { getRegionContextOrDefault } from "@/lib/region";
 import type { Metadata } from "next";
+import { JsonLd, breadcrumbList } from "@/lib/seo/jsonld";
+import { SITE_URL } from "@/lib/seo/config";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PricingPage() {
-  const region = await getRegionContext();
-  if (!region) redirect("/");
+  const region = await getRegionContextOrDefault();
 
   const services = await prisma.service.findMany({
     where: { active: true },
@@ -40,6 +40,12 @@ export default async function PricingPage() {
 
   return (
     <div className="mesh-bg mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <JsonLd
+        data={breadcrumbList([
+          { name: "Home", url: `${SITE_URL}/` },
+          { name: "Pricing", url: `${SITE_URL}/pricing` },
+        ])}
+      />
       <FadeIn>
         <h1 className="font-display text-[clamp(2.25rem,5vw,3.5rem)] font-extrabold tracking-tight">Pricing</h1>
         <p className="mt-2 text-muted">

@@ -21,9 +21,9 @@ export function SiteFooter({
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-gold">Explore</p>
           <ul className="mt-3 space-y-2 text-sm text-cream/80">
-            <li><Link href="/services/quran" className="hover:text-white">Holy Quran Tutors</Link></li>
-            <li><Link href="/services/tuition" className="hover:text-white">Online Tuition</Link></li>
-            <li><Link href="/services/it" className="hover:text-white">IT Services</Link></li>
+            <li><Link href="/quran" className="hover:text-white">Holy Quran Tutors</Link></li>
+            <li><Link href="/tuition" className="hover:text-white">Online Tuition</Link></li>
+            <li><Link href="/it" className="hover:text-white">IT Services</Link></li>
             <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
             <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
           </ul>

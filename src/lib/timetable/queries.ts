@@ -59,6 +59,19 @@ export async function getStudentViewerTimezone(userId: string) {
   };
 }
 
+export async function getTeacherViewerTimezone(userId: string) {
+  const teacher = await prisma.teacherProfile.findUnique({
+    where: { userId },
+    include: { country: { select: { timezone: true, name: true } } },
+  });
+  const timezone =
+    teacher?.country?.timezone || timezoneForCountryCode(teacher?.countryCode) || DEFAULT_TIMEZONE;
+  return {
+    timezone,
+    countryName: teacher?.country?.name ?? null,
+  };
+}
+
 export async function getAllLectures() {
   const lectures = await prisma.lecture.findMany({
     where: { active: true },
@@ -89,6 +102,16 @@ export async function getLecturesForStudent(userId: string) {
 export async function getStudentSchedule(userId: string) {
   const viewer = await getStudentViewerTimezone(userId);
   const sourceLectures = await getLecturesForStudent(userId);
+  return {
+    timezone: viewer.timezone,
+    countryName: viewer.countryName,
+    lectures: withViewerTimes(sourceLectures, viewer.timezone),
+  };
+}
+
+export async function getTeacherSchedule(userId: string) {
+  const viewer = await getTeacherViewerTimezone(userId);
+  const sourceLectures = await getLecturesForTeacher(userId);
   return {
     timezone: viewer.timezone,
     countryName: viewer.countryName,

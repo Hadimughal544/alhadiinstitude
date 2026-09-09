@@ -1,8 +1,7 @@
 import { InquiryForm } from "@/components/inquiry-form";
 import { FadeIn } from "@/components/motion";
-import { getRegionContext, getSettingsMap } from "@/lib/region";
+import { getRegionContextOrDefault, getSettingsMap } from "@/lib/region";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -27,8 +26,7 @@ export default async function BookPage({
 }: {
   searchParams: Promise<{ service?: string; plan?: string; type?: string }>;
 }) {
-  const region = await getRegionContext();
-  if (!region) redirect("/");
+  const region = await getRegionContextOrDefault();
   const sp = await searchParams;
   const [settings, services] = await Promise.all([
     getSettingsMap(),

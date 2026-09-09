@@ -1,9 +1,10 @@
 import { ServiceGateway } from "@/components/service-gateway";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
 import { prisma } from "@/lib/prisma";
-import { getRegionContext, getSettingsMap } from "@/lib/region";
-import { redirect } from "next/navigation";
+import { getRegionContextOrDefault, getSettingsMap } from "@/lib/region";
 import type { Metadata } from "next";
+import { JsonLd, breadcrumbList } from "@/lib/seo/jsonld";
+import { SITE_URL } from "@/lib/seo/config";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HomeGatewayPage() {
-  const region = await getRegionContext();
-  if (!region) redirect("/");
+  const region = await getRegionContextOrDefault();
 
   const [services, settings] = await Promise.all([
     prisma.service.findMany({
@@ -40,8 +40,28 @@ export default async function HomeGatewayPage() {
     getSettingsMap(),
   ]);
 
+  const itemList = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: services.map((service, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: service.title,
+      url: `${SITE_URL}/${service.slug}`,
+    })),
+  };
+
   return (
     <>
+      <JsonLd
+        data={[
+          itemList,
+          breadcrumbList([
+            { name: "Home", url: `${SITE_URL}/` },
+            { name: "Services", url: `${SITE_URL}/home` },
+          ]),
+        ]}
+      />
       <ServiceGateway
         services={services}
         countryLabel={`${region.countryName} · ${region.currencyCode}`}

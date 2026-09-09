@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { cookies } from "next/headers";
 import { Montserrat, Source_Sans_3 } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { JsonLd, organizationSchema, websiteSchema } from "@/lib/seo/jsonld";
+import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/seo/config";
 import { THEME_COOKIE } from "@/lib/constants";
 import { isStoredTheme, themeClassFromCookie, type StoredTheme } from "@/lib/theme-script";
 import { cn } from "@/lib/utils";
@@ -20,9 +21,7 @@ const body = Source_Sans_3({
   weight: ["400", "500", "600", "700"],
 });
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-  "https://alhadiinstitute.com";
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -54,12 +53,14 @@ export const metadata: Metadata = {
     title: "Al-Hadi Institute | Quran Tutors, Online Tuition & IT Services",
     description:
       "Faith-guided education and modern IT — Holy Quran tutors, online tuition, and technology services worldwide.",
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: "Al-Hadi Institute",
     description:
       "Holy Quran tutors, online tuition, and IT services guided with excellence.",
+    images: [DEFAULT_OG_IMAGE],
   },
   robots: {
     index: true,
@@ -76,15 +77,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const initialTheme: StoredTheme = isStoredTheme(stored) ? stored : "system";
   const themeClass = themeClassFromCookie(stored);
 
-  const orgJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "EducationalOrganization",
-    name: "Al-Hadi Institute",
-    url: siteUrl,
-    description:
-      "Holy Quran tutors, online tuition, and IT services — education and technology guided with excellence.",
-  };
-
   return (
     <html
       lang="en"
@@ -92,12 +84,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={cn(display.variable, body.variable, "h-full", themeClass)}
     >
       <body className="min-h-full flex flex-col antialiased">
-        <Script
-          id="org-jsonld"
-          type="application/ld+json"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
-        />
+        <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <Providers initialTheme={initialTheme}>{children}</Providers>
       </body>
     </html>
