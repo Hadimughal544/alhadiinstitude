@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { COUNTRY_COOKIE, CURRENCY_COOKIE, COOKIE_MAX_AGE } from "@/lib/constants";
-import { COUNTRY_TIMEZONES, DEFAULT_TIMEZONE } from "@/lib/country-timezones";
+import { COUNTRY_TIMEZONES, DEFAULT_TIMEZONE, isValidTimezone } from "@/lib/country-timezones";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import type { InquiryStatus, InquiryType, PostStatus } from "@/generated/prisma/client";
@@ -204,6 +204,12 @@ export async function updateCountryAction(formData: FormData): Promise<ActionRes
     const currencySymbol = String(formData.get("currencySymbol") || "");
     const flagEmoji = String(formData.get("flagEmoji") || "");
     const timezone = String(formData.get("timezone") || "").trim();
+    if (timezone && !isValidTimezone(timezone)) {
+      return {
+        ok: false,
+        error: 'Invalid timezone. Use an IANA name like "Africa/Tripoli".',
+      };
+    }
     const sortOrder = Number(formData.get("sortOrder") || 0);
     const active = formData.get("active") === "on" || formData.get("active") === "true";
 
@@ -370,10 +376,14 @@ export async function createCountryAction(formData: FormData): Promise<ActionRes
       .toUpperCase();
     const currencySymbol = String(formData.get("currencySymbol") || "").trim();
     const flagEmoji = String(formData.get("flagEmoji") || "🏳️").trim();
-    const timezone =
-      String(formData.get("timezone") || "").trim() ||
-      COUNTRY_TIMEZONES[code] ||
-      DEFAULT_TIMEZONE;
+    const timezoneInput = String(formData.get("timezone") || "").trim();
+    if (timezoneInput && !isValidTimezone(timezoneInput)) {
+      return {
+        ok: false,
+        error: 'Invalid timezone. Use an IANA name like "Africa/Tripoli".',
+      };
+    }
+    const timezone = timezoneInput || COUNTRY_TIMEZONES[code] || DEFAULT_TIMEZONE;
     const sortOrder = Number(formData.get("sortOrder") || 99);
 
     if (!code || !name || !currencyCode || !currencySymbol) {

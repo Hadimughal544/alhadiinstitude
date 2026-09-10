@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_TIMEZONE, timezoneForCountryCode } from "@/lib/country-timezones";
+import { DEFAULT_TIMEZONE, safeTimezone, timezoneForCountryCode } from "@/lib/country-timezones";
 import { compareLectureTime, dayOfWeekInTimezone, withViewerTimes } from "@/lib/timetable/time";
 import type { TimetableLecture } from "@/lib/timetable/types";
 
@@ -51,8 +51,9 @@ export async function getStudentViewerTimezone(userId: string) {
     where: { userId },
     include: { country: { select: { timezone: true, name: true } } },
   });
-  const timezone =
-    student?.country?.timezone || timezoneForCountryCode(student?.countryCode) || DEFAULT_TIMEZONE;
+  const timezone = safeTimezone(
+    student?.country?.timezone || timezoneForCountryCode(student?.countryCode) || DEFAULT_TIMEZONE
+  );
   return {
     timezone,
     countryName: student?.country?.name ?? null,
@@ -64,8 +65,9 @@ export async function getTeacherViewerTimezone(userId: string) {
     where: { userId },
     include: { country: { select: { timezone: true, name: true } } },
   });
-  const timezone =
-    teacher?.country?.timezone || timezoneForCountryCode(teacher?.countryCode) || DEFAULT_TIMEZONE;
+  const timezone = safeTimezone(
+    teacher?.country?.timezone || timezoneForCountryCode(teacher?.countryCode) || DEFAULT_TIMEZONE
+  );
   return {
     timezone,
     countryName: teacher?.country?.name ?? null,
