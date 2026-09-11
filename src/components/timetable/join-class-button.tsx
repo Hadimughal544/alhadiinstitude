@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Clock, Video } from "lucide-react";
 import { joinWindow, lectureSourceSlot, type JoinRole } from "@/lib/timetable/time";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { recordJoinClickAction } from "@/actions/attendance";
 
 type LectureWindow = {
+  id: string;
   timezone: string;
   sourceDayOfWeek: number;
   sourceStartTime: string;
@@ -28,6 +30,7 @@ export function JoinClassButton({
   compact?: boolean;
 }) {
   const [now, setNow] = useState(() => new Date());
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 15_000);
@@ -35,6 +38,13 @@ export function JoinClassButton({
   }, []);
 
   const windowState = joinWindow(lectureSourceSlot(lecture), role, now, lecture.timezone);
+
+  function handleJoinClick() {
+    if (role !== "teacher" && role !== "student") return;
+    startTransition(() => {
+      recordJoinClickAction(lecture.id).catch(() => {});
+    });
+  }
 
   if (windowState.state === "open") {
     if (!meetUrl) {
@@ -55,6 +65,7 @@ export function JoinClassButton({
         href={meetUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={handleJoinClick}
         className={cn(
           "inline-flex items-center justify-center gap-1.5 rounded-full bg-teal text-cream shadow-sm transition hover:bg-teal-light dark:bg-gold dark:text-ink",
           compact ? "px-2.5 py-1 text-[11px] font-medium" : "px-4 py-2 text-sm",

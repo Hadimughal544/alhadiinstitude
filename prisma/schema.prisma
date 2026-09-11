@@ -45,6 +45,7 @@ model User {
   teacher           TeacherProfile?
   student           StudentProfile?
   googleConnection  GoogleConnection?
+  attendanceRecords AttendanceRecord[]
 }
 
 model Account {
@@ -131,8 +132,8 @@ model Plan {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  service  Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  prices   PlanPrice[]
+  service   Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  prices    PlanPrice[]
   inquiries Inquiry[]
 }
 
@@ -190,8 +191,8 @@ model StudentProfile {
   ageGroup    String?
   countryCode String?
 
-  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  country     Country?             @relation(fields: [countryCode], references: [code], onDelete: SetNull)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country     Country?            @relation(fields: [countryCode], references: [code], onDelete: SetNull)
   enrollments LectureEnrollment[]
 }
 
@@ -214,9 +215,47 @@ model Lecture {
   teacher     TeacherProfile      @relation(fields: [teacherId], references: [id], onDelete: Restrict)
   service     Service?            @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   enrollments LectureEnrollment[]
+  sessions    LectureSession[]
 
   @@index([teacherId, dayOfWeek])
   @@index([dayOfWeek, active])
+}
+
+enum AttendanceMethod {
+  MEET_JOIN_CLICK
+}
+
+model LectureSession {
+  id              String    @id @default(cuid())
+  lectureId       String
+  occurredOn      String
+  scheduledStart  DateTime
+  scheduledEnd    DateTime
+  teacherJoinedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  lecture    Lecture            @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  attendance AttendanceRecord[]
+
+  @@unique([lectureId, occurredOn])
+  @@index([occurredOn])
+}
+
+model AttendanceRecord {
+  id        String           @id @default(cuid())
+  sessionId String
+  userId    String
+  role      Role
+  joinedAt  DateTime
+  method    AttendanceMethod @default(MEET_JOIN_CLICK)
+  createdAt DateTime         @default(now())
+
+  session LectureSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([userId])
 }
 
 model LectureEnrollment {

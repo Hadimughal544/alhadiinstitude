@@ -10,6 +10,7 @@ import {
   GraduationCap,
   CalendarDays,
   UserRound,
+  ClipboardCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { PortalRole } from "@/lib/roles";
@@ -48,7 +49,10 @@ const ADMIN_GROUPS: DashboardNavGroup[] = [
   },
   {
     label: "Academics",
-    items: [{ href: "/admin/timetable", label: "Timetable", icon: CalendarDays }],
+    items: [
+      { href: "/admin/timetable", label: "Timetable", icon: CalendarDays },
+      { href: "/admin/attendance", label: "Attendance", icon: ClipboardCheck },
+    ],
   },
   {
     label: "Marketing",
