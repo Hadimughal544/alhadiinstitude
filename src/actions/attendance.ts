@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-guards";
+import { requireAdmin, requireSession } from "@/lib/auth-guards";
 import { toActionError, type ActionResult } from "@/lib/action-result";
 import { resolveOrCreateSession } from "@/lib/attendance/session";
 
@@ -58,5 +58,28 @@ export async function recordJoinClickAction(lectureId: string): Promise<ActionRe
     return { ok: true };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Could not record attendance.") };
+  }
+}
+
+export async function deleteAttendanceRecordAction(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    await prisma.attendanceRecord.delete({ where: { id } });
+    revalidatePath("/admin/attendance");
+    return { ok: true, message: "Attendance record deleted." };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Could not delete the attendance record.") };
+  }
+}
+
+export async function bulkDeleteAttendanceRecordsAction(ids: string[]): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    if (ids.length === 0) return { ok: false, error: "No rows selected." };
+    const { count } = await prisma.attendanceRecord.deleteMany({ where: { id: { in: ids } } });
+    revalidatePath("/admin/attendance");
+    return { ok: true, message: `${count} attendance records deleted.` };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Could not delete the selected attendance records.") };
   }
 }

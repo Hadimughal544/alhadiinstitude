@@ -8,11 +8,15 @@ import { COUNTRY_COOKIE, CURRENCY_COOKIE, COOKIE_MAX_AGE } from "@/lib/constants
 import { COUNTRY_TIMEZONES, DEFAULT_TIMEZONE, isValidTimezone } from "@/lib/country-timezones";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
-import type { InquiryStatus, InquiryType, PostStatus } from "@/generated/prisma/client";
+import type { InquiryStatus, InquiryType, PostStatus, TeacherApplicationStatus } from "@/generated/prisma/client";
 import { GBP_FX, PLAN_CURRENCIES } from "@/lib/currencies";
 import { sanitizeBlogHtml } from "@/lib/blog";
 import { slugifyBlog } from "@/lib/blog-slug";
 import { toActionError, type ActionResult } from "@/lib/action-result";
+import {
+  sendTeacherApplicationConfirmation,
+  sendTeacherApplicationAdminAlert,
+} from "@/lib/email";
 
 export async function selectCountryAction(countryCode: string) {
   const country = await prisma.country.findFirst({
@@ -99,6 +103,120 @@ export async function updateInquiryStatusAction(id: string, status: InquiryStatu
   await requireAdmin();
   await prisma.inquiry.update({ where: { id }, data: { status } });
   revalidatePath("/admin/inquiries");
+}
+
+export async function deleteInquiryAction(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    await prisma.inquiry.delete({ where: { id } });
+    revalidatePath("/admin/inquiries");
+    return { ok: true, message: "Inquiry deleted." };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Could not delete the inquiry.") };
+  }
+}
+
+export async function bulkDeleteInquiriesAction(ids: string[]): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    if (ids.length === 0) return { ok: false, error: "No rows selected." };
+    const { count } = await prisma.inquiry.deleteMany({ where: { id: { in: ids } } });
+    revalidatePath("/admin/inquiries");
+    return { ok: true, message: `${count} inquiries deleted.` };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Could not delete the selected inquiries.") };
+  }
+}
+
+const teacherApplicationSchema = z.object({
+  name: z.string().min(2, "Please enter your full name."),
+  email: z.string().email("Please enter a valid email address."),
+  phone: z.string().min(6, "Please enter a valid phone number."),
+  serviceSlug: z.string().min(1),
+  subject: z.string().optional().nullable(),
+  experience: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  countryCode: z.string().optional().nullable(),
+});
+
+const SERVICE_TITLES: Record<string, string> = {
+  quran: "Quran",
+  tuition: "Tuition",
+  it: "IT",
+};
+
+export async function submitTeacherApplicationAction(formData: FormData): Promise<ActionResult> {
+  const parsed = teacherApplicationSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    serviceSlug: formData.get("serviceSlug"),
+    subject: formData.get("subject") || null,
+    experience: formData.get("experience") || null,
+    message: formData.get("message") || null,
+    countryCode: formData.get("countryCode") || null,
+  });
+
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message || "Please check the form fields." };
+  }
+
+  const { name, email, phone, serviceSlug, subject, experience, message, countryCode } = parsed.data;
+
+  try {
+    await prisma.teacherApplication.create({
+      data: {
+        name,
+        email,
+        phone,
+        serviceSlug,
+        subject: subject || null,
+        experience: experience || null,
+        message: message || null,
+        countryCode: countryCode || null,
+      },
+    });
+
+    const serviceName = SERVICE_TITLES[serviceSlug] || serviceSlug;
+    await Promise.allSettled([
+      sendTeacherApplicationConfirmation({ to: email, name, serviceName }),
+      sendTeacherApplicationAdminAlert({ name, email, phone, serviceSlug, subject, experience, message }),
+    ]);
+
+    revalidatePath("/admin/teacher-applications");
+    return { ok: true, message: "Application submitted successfully!" };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Could not submit your application. Please try again.") };
+  }
+}
+
+export async function updateTeacherApplicationStatusAction(id: string, status: TeacherApplicationStatus) {
+  await requireAdmin();
+  await prisma.teacherApplication.update({ where: { id }, data: { status } });
+  revalidatePath("/admin/teacher-applications");
+}
+
+export async function deleteTeacherApplicationAction(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    await prisma.teacherApplication.delete({ where: { id } });
+    revalidatePath("/admin/teacher-applications");
+    return { ok: true, message: "Application deleted." };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Could not delete the application.") };
+  }
+}
+
+export async function bulkDeleteTeacherApplicationsAction(ids: string[]): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    if (ids.length === 0) return { ok: false, error: "No rows selected." };
+    const { count } = await prisma.teacherApplication.deleteMany({ where: { id: { in: ids } } });
+    revalidatePath("/admin/teacher-applications");
+    return { ok: true, message: `${count} applications deleted.` };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Could not delete the selected applications.") };
+  }
 }
 
 export async function updateServiceAction(formData: FormData): Promise<ActionResult> {

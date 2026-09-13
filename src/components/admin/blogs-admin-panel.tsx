@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { AdminModal } from "@/components/admin/admin-modal";
 import { BlogEditor } from "@/components/admin/blog-editor";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { DataTable, type DataTableColumn } from "@/components/dashboard/data-table";
 
 export type AdminBlogPost = {
   id: string;
@@ -30,6 +33,35 @@ export function BlogsAdminPanel({ posts }: { posts: AdminBlogPost[] }) {
     router.refresh();
   };
 
+  const columns: DataTableColumn<AdminBlogPost>[] = [
+    {
+      key: "title",
+      header: "Title",
+      render: (post) => (
+        <div className="min-w-0">
+          <p className="font-semibold">{post.title}</p>
+          <p className="text-sm text-muted">/blog/{post.slug}</p>
+        </div>
+      ),
+    },
+    {
+      key: "excerpt",
+      header: "Excerpt",
+      render: (post) => (
+        <p className="line-clamp-2 max-w-md text-sm text-muted">{post.excerpt || "—"}</p>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (post) => (
+        <Badge variant={post.status === "PUBLISHED" ? "teal" : "outline"}>
+          {post.status === "PUBLISHED" ? "Published" : "Draft"}
+        </Badge>
+      ),
+    },
+  ];
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -39,48 +71,18 @@ export function BlogsAdminPanel({ posts }: { posts: AdminBlogPost[] }) {
             Create and publish articles for the public blog.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen("create")}
-          className="inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-cream dark:bg-gold dark:text-ink"
-        >
+        <Button type="button" onClick={() => setOpen("create")} className="gap-1.5">
           <Plus className="h-4 w-4" /> New post
-        </button>
+        </Button>
       </div>
 
-      <div className="mt-6 grid gap-4">
-        {posts.length === 0 && (
-          <p className="rounded-2xl border border-dashed border-foreground/15 px-5 py-10 text-center text-sm text-muted">
-            No blog posts yet. Create your first article.
-          </p>
-        )}
-        {posts.map((post) => (
-          <button
-            key={post.id}
-            type="button"
-            onClick={() => setOpen(post)}
-            className="rounded-2xl border border-foreground/10 bg-card p-5 text-left shadow-sm transition hover:border-gold/40"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="font-semibold">{post.title}</p>
-                <p className="text-sm text-muted">/blog/{post.slug}</p>
-                {post.excerpt && (
-                  <p className="mt-2 line-clamp-2 text-sm text-muted">{post.excerpt}</p>
-                )}
-              </div>
-              <span
-                className={`shrink-0 text-xs font-medium ${
-                  post.status === "PUBLISHED"
-                    ? "text-teal dark:text-gold"
-                    : "text-muted"
-                }`}
-              >
-                {post.status === "PUBLISHED" ? "Published" : "Draft"}
-              </span>
-            </div>
-          </button>
-        ))}
+      <div className="mt-6">
+        <DataTable
+          columns={columns}
+          rows={posts}
+          onRowClick={(post) => setOpen(post)}
+          emptyLabel="No blog posts yet. Create your first article."
+        />
       </div>
 
       <AdminModal

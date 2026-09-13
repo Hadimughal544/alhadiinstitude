@@ -11,6 +11,7 @@ import {
   CalendarDays,
   UserRound,
   ClipboardCheck,
+  UserPlus,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { PortalRole } from "@/lib/roles";
@@ -58,6 +59,7 @@ const ADMIN_GROUPS: DashboardNavGroup[] = [
     label: "Marketing",
     items: [
       { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
+      { href: "/admin/teacher-applications", label: "Teacher Applications", icon: UserPlus },
       { href: "/admin/blogs", label: "Blogs", icon: Newspaper },
       { href: "/admin/services", label: "Services", icon: Layers },
       { href: "/admin/plans", label: "Plans", icon: CreditCard },

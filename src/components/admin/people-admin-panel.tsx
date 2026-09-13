@@ -2,11 +2,20 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { MoreHorizontal, Plus } from "lucide-react";
 import { AdminModal } from "@/components/admin/admin-modal";
-import { DataListRow } from "@/components/dashboard/data-list-row";
+import { DataTable, type DataTableColumn } from "@/components/dashboard/data-table";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import type { UserActionResult } from "@/actions/admin/users";
 import { toActionError } from "@/lib/action-result";
@@ -52,11 +61,11 @@ export function PeopleAdminPanel({
   const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<AdminPerson | null>(null);
 
   const title = kind === "teacher" ? "Teachers" : "Students";
   const extraLabel = kind === "teacher" ? "Specialization" : "Age group";
   const extraName = kind === "teacher" ? "specialization" : "ageGroup";
-  const countLabel = kind === "teacher" ? "lectures" : "enrollments";
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -94,6 +103,92 @@ export function PeopleAdminPanel({
     });
   };
 
+  const columns: DataTableColumn<AdminPerson>[] = [
+    {
+      key: "name",
+      header: "Name",
+      render: (person) => (
+        <div>
+          <p className="font-medium">{person.name}</p>
+          <p className="text-xs text-muted">{person.email}</p>
+        </div>
+      ),
+    },
+    {
+      key: "meta",
+      header: kind === "teacher" ? "Specialization" : "Age group",
+      render: (person) => (
+        <span className="text-sm text-muted">
+          {[person.countryName, person.extra].filter(Boolean).join(" · ") || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "count",
+      header: kind === "teacher" ? "Lectures" : "Enrollments",
+      className: "text-center",
+      render: (person) => person.count,
+    },
+    {
+      key: "active",
+      header: "Status",
+      render: (person) => (
+        <Badge variant={person.active ? "success" : "outline"}>
+          {person.active ? "Active" : "Inactive"}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "",
+      className: "text-right",
+      render: (person) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Actions for ${person.name}`}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem
+              onClick={() => {
+                setError(null);
+                setOpen(person);
+              }}
+            >
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={pending}
+              onClick={() => run(() => resetPasswordAction(person.id))}
+            >
+              Reset password
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={pending}
+              onClick={() => run(() => setActiveAction(person.id, !person.active))}
+            >
+              {person.active ? "Deactivate" : "Reactivate"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={pending}
+              className="text-red-600 dark:text-red-400"
+              onClick={() => setConfirmDelete(person)}
+            >
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -120,42 +215,52 @@ export function PeopleAdminPanel({
       />
 
       {passwordNotice && (
-        <div className="mt-4 rounded-2xl border border-gold/40 bg-gold/10 p-4 text-sm">
-          <p className="font-medium">Copy this password now. It will not be shown again.</p>
-          <p className="mt-2 select-all font-mono text-base">{passwordNotice}</p>
-          <button
-            type="button"
-            className="mt-3 text-sm text-muted underline"
-            onClick={() => setPasswordNotice(null)}
-          >
-            Dismiss
-          </button>
-        </div>
+        <Card className="mb-4 border-gold/40 bg-gold/10">
+          <CardContent className="p-4">
+            <p className="font-medium">Copy this password now. It will not be shown again.</p>
+            <p className="mt-2 select-all font-mono text-base">{passwordNotice}</p>
+            <button
+              type="button"
+              className="mt-3 text-sm text-muted underline"
+              onClick={() => setPasswordNotice(null)}
+            >
+              Dismiss
+            </button>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="grid gap-3">
-        {filtered.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">
-            No {kind}s found.
-          </p>
-        )}
-        {filtered.map((person) => (
-          <DataListRow
-            key={person.id}
-            name={person.name}
-            subtitle={person.email}
-            meta={[person.countryName, person.extra, `${person.count} ${countLabel}`]
-              .filter(Boolean)
-              .join(" · ")}
-            badge={person.active ? "Active" : "Inactive"}
-            badgeVariant={person.active ? "success" : "outline"}
-            onClick={() => {
-              setError(null);
-              setOpen(person);
-            }}
-          />
-        ))}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={filtered}
+        emptyLabel={`No ${kind}s found.`}
+        onRowClick={(person) => {
+          setError(null);
+          setOpen(person);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setConfirmDelete(null);
+        }}
+        title={`Delete this ${kind}?`}
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        pending={pending}
+        onConfirm={() => {
+          if (!confirmDelete) return;
+          const target = confirmDelete;
+          run(
+            () => deleteAction(target.id),
+            () => {
+              setConfirmDelete(null);
+              close();
+            }
+          );
+        }}
+      />
 
       <AdminModal
         open={open !== null}
@@ -258,9 +363,7 @@ export function PeopleAdminPanel({
                     type="button"
                     variant="outline"
                     disabled={pending}
-                    onClick={() =>
-                      run(() => resetPasswordAction(open.id), () => close())
-                    }
+                    onClick={() => run(() => resetPasswordAction(open.id), () => close())}
                   >
                     Reset password
                   </Button>
@@ -281,10 +384,7 @@ export function PeopleAdminPanel({
                     type="button"
                     variant="ghost"
                     disabled={pending}
-                    onClick={() => {
-                      if (!confirm(`Delete this ${kind}? This cannot be undone.`)) return;
-                      run(() => deleteAction(open.id), () => close());
-                    }}
+                    onClick={() => setConfirmDelete(open)}
                   >
                     Delete
                   </Button>

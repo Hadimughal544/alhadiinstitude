@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { changePasswordAction } from "@/actions/account";
+import { useServerAction } from "@/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label, Field } from "@/components/ui/label";
 
 export function ChangePasswordForm() {
   const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const { run, pending, error } = useServerAction(changePasswordAction);
 
   return (
     <form
@@ -16,38 +18,21 @@ export function ChangePasswordForm() {
         event.preventDefault();
         const form = event.currentTarget;
         const formData = new FormData(form);
-        setError(null);
         setMessage(null);
-        startTransition(async () => {
-          const result = await changePasswordAction(formData);
-          if (!result.ok) {
-            setError(result.error);
-            return;
-          }
+        run(formData, (result) => {
           setMessage(result.message || "Password updated.");
           form.reset();
         });
       }}
     >
-      <label className="block text-sm">
-        <span className="mb-1.5 block font-medium">Current password</span>
-        <input
-          name="currentPassword"
-          type="password"
-          required
-          className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3"
-        />
-      </label>
-      <label className="block text-sm">
-        <span className="mb-1.5 block font-medium">New password</span>
-        <input
-          name="nextPassword"
-          type="password"
-          required
-          minLength={8}
-          className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3"
-        />
-      </label>
+      <Field>
+        <Label htmlFor="currentPassword">Current password</Label>
+        <Input id="currentPassword" name="currentPassword" type="password" required />
+      </Field>
+      <Field>
+        <Label htmlFor="nextPassword">New password</Label>
+        <Input id="nextPassword" name="nextPassword" type="password" required minLength={8} />
+      </Field>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {message && <p className="text-sm text-teal dark:text-gold">{message}</p>}
       <Button type="submit" disabled={pending}>

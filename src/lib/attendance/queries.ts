@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
+import type { Role } from "@/generated/prisma/client";
 
 export type SessionAttendanceRow = {
   sessionId: string;
@@ -63,4 +64,36 @@ export async function listSessionsWithAttendance(params: {
       })),
     };
   });
+}
+
+export type AttendanceRecordRow = {
+  id: string;
+  personName: string;
+  personEmail: string;
+  role: Role;
+  lectureTitle: string;
+  occurredOn: string;
+  joinedAt: Date;
+};
+
+/** One row per join-click event (teacher or student) — used by the admin attendance table. */
+export async function listAttendanceRecords(): Promise<AttendanceRecordRow[]> {
+  const records = await prisma.attendanceRecord.findMany({
+    orderBy: { joinedAt: "desc" },
+    take: 500,
+    include: {
+      user: { select: { name: true, email: true } },
+      session: { include: { lecture: { select: { title: true } } } },
+    },
+  });
+
+  return records.map((record) => ({
+    id: record.id,
+    personName: record.user.name || record.user.email,
+    personEmail: record.user.email,
+    role: record.role,
+    lectureTitle: record.session.lecture.title,
+    occurredOn: record.session.occurredOn,
+    joinedAt: record.joinedAt,
+  }));
 }

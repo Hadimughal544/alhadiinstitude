@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PlanCards } from "@/components/plan-cards";
 import { FadeIn, HeroMotion } from "@/components/motion";
 import { Button } from "@/components/ui/button";
+import { JoinAsTeacherModal } from "@/components/join-as-teacher-modal";
 import type { RegionContext } from "@/lib/region";
 
 type Feature = { title: string; description: string };
@@ -83,6 +84,10 @@ export function ServicePageContent({
                   View Plans
                 </Button>
               </a>
+              <JoinAsTeacherModal
+                serviceSlug={service.slug}
+                className="border-white/40 text-white hover:bg-white/10"
+              />
             </div>
           </HeroMotion>
         </div>

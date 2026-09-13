@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { createCountryAction, updateCountryAction } from "@/actions";
 import { AdminModal } from "@/components/admin/admin-modal";
+import { DataTable, type DataTableColumn } from "@/components/dashboard/data-table";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { toActionError } from "@/lib/action-result";
+import { useServerAction } from "@/hooks/use-server-action";
 
 export type AdminCountry = {
   id: string;
@@ -23,79 +26,77 @@ export type AdminCountry = {
 export function CountriesAdminPanel({ countries }: { countries: AdminCountry[] }) {
   const router = useRouter();
   const [open, setOpen] = useState<"create" | AdminCountry | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+
+  const createRun = useServerAction(createCountryAction);
+  const updateRun = useServerAction(updateCountryAction);
 
   const close = () => {
     setOpen(null);
-    setError(null);
+    createRun.reset();
+    updateRun.reset();
     router.refresh();
   };
 
-  const run =
-    (action: (fd: FormData) => Promise<{ ok: true } | { ok: false; error: string }>) =>
-    (formData: FormData) => {
-      setError(null);
-      startTransition(async () => {
-        try {
-          const result = await action(formData);
-          if (!result.ok) {
-            setError(result.error);
-            return;
-          }
-          close();
-        } catch (e) {
-          setError(toActionError(e));
-        }
-      });
-    };
+  const columns: DataTableColumn<AdminCountry>[] = [
+    {
+      key: "name",
+      header: "Country",
+      render: (c) => (
+        <div>
+          <p className="font-medium">
+            {c.flagEmoji} {c.name}
+          </p>
+          <p className="text-xs text-muted">{c.code}</p>
+        </div>
+      ),
+    },
+    {
+      key: "currency",
+      header: "Currency",
+      render: (c) => (
+        <span>
+          {c.currencyCode} ({c.currencySymbol})
+        </span>
+      ),
+    },
+    { key: "timezone", header: "Timezone", render: (c) => c.timezone },
+    { key: "sortOrder", header: "Sort", className: "text-center", render: (c) => c.sortOrder },
+    {
+      key: "active",
+      header: "Status",
+      render: (c) => (
+        <Badge variant={c.active ? "teal" : "outline"}>{c.active ? "Active" : "Hidden"}</Badge>
+      ),
+    },
+  ];
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl">Countries</h1>
-          <p className="mt-1 text-sm text-muted">Regions shown on the country selector.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setError(null);
-            setOpen("create");
-          }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-cream dark:bg-gold dark:text-ink"
-        >
-          <Plus className="h-4 w-4" /> Add country
-        </button>
-      </div>
-
-      <div className="mt-6 grid gap-3">
-        {countries.map((c) => (
-          <button
-            key={c.id}
+      <PageHeader
+        title="Countries"
+        description="Regions shown on the country selector."
+        action={
+          <Button
             type="button"
             onClick={() => {
-              setError(null);
-              setOpen(c);
+              createRun.reset();
+              setOpen("create");
             }}
-            className="rounded-2xl border border-foreground/10 bg-card p-4 text-left shadow-sm transition hover:border-gold/40"
           >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="font-semibold">
-                  {c.flagEmoji} {c.name}
-                </p>
-                <p className="text-xs text-muted">
-                  {c.code} · {c.currencyCode} ({c.currencySymbol}) · {c.timezone}
-                </p>
-              </div>
-              <span className={`text-xs ${c.active ? "text-teal dark:text-gold" : "text-muted"}`}>
-                {c.active ? "Active" : "Hidden"}
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
+            <Plus className="h-4 w-4" /> Add country
+          </Button>
+        }
+      />
+
+      <DataTable
+        columns={columns}
+        rows={countries}
+        onRowClick={(c) => {
+          updateRun.reset();
+          setOpen(c);
+        }}
+        emptyLabel="No countries yet."
+      />
 
       <AdminModal
         open={open === "create"}
@@ -103,8 +104,12 @@ export function CountriesAdminPanel({ countries }: { countries: AdminCountry[] }
         title="Add country"
         description="Add a region for the country selector and currency display."
       >
-        {error && <p className="mb-4 rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
-        <form action={run(createCountryAction)} className="space-y-4">
+        {createRun.error && (
+          <p className="mb-4 rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+            {createRun.error}
+          </p>
+        )}
+        <form action={(formData) => createRun.run(formData, close)} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm">
               <span className="mb-1 block font-medium">Country code</span>
@@ -142,7 +147,9 @@ export function CountriesAdminPanel({ countries }: { countries: AdminCountry[] }
             <span className="mb-1 block font-medium">Sort order</span>
             <input name="sortOrder" type="number" defaultValue={99} className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3" />
           </label>
-          <Button type="submit" disabled={pending}>{pending ? "Creating…" : "Create country"}</Button>
+          <Button type="submit" disabled={createRun.pending}>
+            {createRun.pending ? "Creating…" : "Create country"}
+          </Button>
         </form>
       </AdminModal>
 
@@ -151,9 +158,13 @@ export function CountriesAdminPanel({ countries }: { countries: AdminCountry[] }
         onClose={() => setOpen(null)}
         title={typeof open === "object" && open ? `Edit: ${open.name}` : "Edit country"}
       >
-        {error && <p className="mb-4 rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
+        {updateRun.error && (
+          <p className="mb-4 rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+            {updateRun.error}
+          </p>
+        )}
         {typeof open === "object" && open && (
-          <form action={run(updateCountryAction)} className="space-y-4">
+          <form action={(formData) => updateRun.run(formData, close)} className="space-y-4">
             <input type="hidden" name="id" value={open.id} />
             <p className="text-xs text-muted">
               {open.code} · {open.currencyCode}
@@ -181,7 +192,9 @@ export function CountriesAdminPanel({ countries }: { countries: AdminCountry[] }
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="active" defaultChecked={open.active} /> Active
             </label>
-            <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save country"}</Button>
+            <Button type="submit" disabled={updateRun.pending}>
+              {updateRun.pending ? "Saving…" : "Save country"}
+            </Button>
           </form>
         )}
       </AdminModal>

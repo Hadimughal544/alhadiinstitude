@@ -24,6 +24,11 @@ import {
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select } from "@/components/ui/select";
+import { Label, Field } from "@/components/ui/label";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { slugifyBlog } from "@/lib/blog-slug";
 import {
@@ -32,6 +37,7 @@ import {
   deleteBlogPostAction,
 } from "@/actions";
 import { toActionError } from "@/lib/action-result";
+import { useServerAction } from "@/hooks/use-server-action";
 
 type BlogEditorProps = {
   mode: "create" | "edit";
@@ -85,8 +91,17 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingInline, setUploadingInline] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletePending, startDeleteTransition] = useTransition();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const {
+    run: runSave,
+    pending: savePending,
+    error: saveError,
+  } = useServerAction(mode === "create" ? createBlogPostAction : updateBlogPostAction);
+  const pending = savePending || deletePending;
+  const error = saveError || deleteError || uploadError;
   const coverInputRef = useRef<HTMLInputElement>(null);
   const inlineInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
@@ -132,13 +147,13 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
 
   const onCoverFile = async (file: File | undefined) => {
     if (!file) return;
-    setError(null);
+    setUploadError(null);
     setUploadingCover(true);
     try {
       const data = await uploadFile(file);
       setCoverImage(data.url!);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Cover upload failed");
+      setUploadError(e instanceof Error ? e.message : "Cover upload failed");
     } finally {
       setUploadingCover(false);
     }
@@ -146,13 +161,13 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
 
   const onInlineFile = async (file: File | undefined) => {
     if (!file || !editor) return;
-    setError(null);
+    setUploadError(null);
     setUploadingInline(true);
     try {
       const data = await uploadFile(file);
       editor.chain().focus().setImage({ src: data.url!, alt: title || "Blog image" }).run();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Image upload failed");
+      setUploadError(e instanceof Error ? e.message : "Image upload failed");
     } finally {
       setUploadingInline(false);
     }
@@ -160,7 +175,7 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
 
   const onDocFile = async (file: File | undefined) => {
     if (!file) return;
-    setError(null);
+    setUploadError(null);
     setUploadingDoc(true);
     try {
       const data = await uploadFile(file);
@@ -168,14 +183,15 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
       setAttachmentName(data.originalFilename || file.name);
       setAttachmentType(data.attachmentType || "pdf");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Document upload failed");
+      setUploadError(e instanceof Error ? e.message : "Document upload failed");
     } finally {
       setUploadingDoc(false);
     }
   };
 
   const submit = (formData: FormData) => {
-    setError(null);
+    setUploadError(null);
+    setDeleteError(null);
     formData.set("title", title);
     formData.set("slug", effectiveSlug);
     formData.set("excerpt", excerpt);
@@ -191,35 +207,23 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
       formData.set("id", post.id);
     }
 
-    startTransition(async () => {
-      try {
-        const result =
-          mode === "create"
-            ? await createBlogPostAction(formData)
-            : await updateBlogPostAction(formData);
-        if (!result.ok) {
-          setError(result.error);
-          return;
-        }
-        onSuccess?.();
-      } catch (e) {
-        setError(toActionError(e, "Save failed"));
-      }
-    });
+    runSave(formData, () => onSuccess?.());
   };
 
   const onDelete = () => {
-    if (!post || !window.confirm("Delete this blog post permanently?")) return;
-    startTransition(async () => {
+    if (!post) return;
+    setDeleteError(null);
+    startDeleteTransition(async () => {
       try {
         const result = await deleteBlogPostAction(post.id);
         if (!result.ok) {
-          setError(result.error);
+          setDeleteError(result.error);
           return;
         }
+        setConfirmDeleteOpen(false);
         onSuccess?.();
       } catch (e) {
-        setError(toActionError(e, "Delete failed"));
+        setDeleteError(toActionError(e, "Delete failed"));
       }
     });
   };
@@ -233,39 +237,40 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm sm:col-span-2">
-          <span className="mb-1 block font-medium">Title</span>
-          <input
+        <Field className="sm:col-span-2">
+          <Label htmlFor="blog-title">Title</Label>
+          <Input
+            id="blog-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3"
             placeholder="Post title"
           />
-        </label>
-        <label className="block text-sm sm:col-span-2">
-          <span className="mb-1 block font-medium">Slug</span>
-          <input
+        </Field>
+        <Field className="sm:col-span-2">
+          <Label htmlFor="blog-slug">Slug</Label>
+          <Input
+            id="blog-slug"
             value={effectiveSlug}
             onChange={(e) => {
               setSlugTouched(true);
               setSlug(e.target.value);
             }}
             required
-            className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3 font-mono text-sm"
+            className="font-mono text-sm"
             placeholder="url-slug"
           />
-        </label>
-        <label className="block text-sm sm:col-span-2">
-          <span className="mb-1 block font-medium">Excerpt</span>
-          <textarea
+        </Field>
+        <Field className="sm:col-span-2">
+          <Label htmlFor="blog-excerpt">Excerpt</Label>
+          <Textarea
+            id="blog-excerpt"
             value={excerpt}
             onChange={(e) => setExcerpt(e.target.value)}
             rows={2}
-            className="w-full rounded-xl border border-foreground/15 bg-background px-3 py-2"
             placeholder="Short summary for the blog list and SEO"
           />
-        </label>
+        </Field>
       </div>
 
       <div className="space-y-3">
@@ -293,13 +298,15 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
             onChange={(e) => onCoverFile(e.target.files?.[0])}
           />
           {coverImage && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setCoverImage("")}
-              className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground"
+              className="gap-1 text-muted hover:text-foreground"
             >
               <X className="h-4 w-4" /> Remove
-            </button>
+            </Button>
           )}
         </div>
         {coverImage && (
@@ -337,17 +344,19 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
             onChange={(e) => onDocFile(e.target.files?.[0])}
           />
           {attachmentUrl && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 setAttachmentUrl("");
                 setAttachmentName("");
                 setAttachmentType("");
               }}
-              className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground"
+              className="gap-1 text-muted hover:text-foreground"
             >
               <X className="h-4 w-4" /> Remove
-            </button>
+            </Button>
           )}
         </div>
         {attachmentUrl && (
@@ -444,36 +453,36 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">Status</span>
-          <select
+        <Field>
+          <Label htmlFor="blog-status">Status</Label>
+          <Select
+            id="blog-status"
             value={status}
             onChange={(e) => setStatus(e.target.value as "DRAFT" | "PUBLISHED")}
-            className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3"
           >
             <option value="DRAFT">Draft</option>
             <option value="PUBLISHED">Published</option>
-          </select>
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">SEO title (optional)</span>
-          <input
+          </Select>
+        </Field>
+        <Field>
+          <Label htmlFor="blog-meta-title">SEO title (optional)</Label>
+          <Input
+            id="blog-meta-title"
             value={metaTitle}
             onChange={(e) => setMetaTitle(e.target.value)}
-            className="h-11 w-full rounded-xl border border-foreground/15 bg-background px-3"
             placeholder="Defaults to post title"
           />
-        </label>
-        <label className="block text-sm sm:col-span-2">
-          <span className="mb-1 block font-medium">SEO description (optional)</span>
-          <textarea
+        </Field>
+        <Field className="sm:col-span-2">
+          <Label htmlFor="blog-meta-description">SEO description (optional)</Label>
+          <Textarea
+            id="blog-meta-description"
             value={metaDescription}
             onChange={(e) => setMetaDescription(e.target.value)}
             rows={2}
-            className="w-full rounded-xl border border-foreground/15 bg-background px-3 py-2"
             placeholder="Defaults to excerpt"
           />
-        </label>
+        </Field>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -481,11 +490,28 @@ export function BlogEditor({ mode, post, onSuccess }: BlogEditorProps) {
           {pending ? "Saving…" : mode === "create" ? "Create post" : "Save changes"}
         </Button>
         {mode === "edit" && (
-          <Button type="button" variant="outline" disabled={pending} onClick={onDelete}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={() => setConfirmDeleteOpen(true)}
+          >
             Delete
           </Button>
         )}
       </div>
+
+      {mode === "edit" && post && (
+        <ConfirmDialog
+          open={confirmDeleteOpen}
+          onOpenChange={setConfirmDeleteOpen}
+          title="Delete this blog post?"
+          description="This will permanently delete the blog post. This action cannot be undone."
+          confirmLabel="Delete"
+          pending={deletePending}
+          onConfirm={onDelete}
+        />
+      )}
     </form>
   );
 }
@@ -504,18 +530,20 @@ function ToolbarButton({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon"
       aria-label={label}
       title={label}
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-foreground/5 hover:text-foreground disabled:opacity-50",
+        "h-8 w-8",
         active && "bg-teal/15 text-teal dark:bg-gold/20 dark:text-gold"
       )}
     >
       {children}
-    </button>
+    </Button>
   );
 }
